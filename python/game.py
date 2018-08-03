@@ -1,12 +1,22 @@
+import sys
+
 class Game:
-    def __init__(self):
+    def __init__(self, file=None):
+        if file is None:
+            self._file = sys.stdout
+        else:
+            self._file = open(file, "w+", 1)
         self.board = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
         self.com = "X"  # the computer's marker
         self.hum = "O"  # the user's marker
 
+    def show(self, msg):
+        """Print something to the game file."""
+        self._file.write(msg)
+
     def start_game(self):
         # start by printing the board
-        print(
+        self.show(
             " %s | %s | %s \n===+===+===\n %s | %s | %s \n===+===+===\n %s | %s | %s \n"
             % (
                 self.board[0],
@@ -20,14 +30,14 @@ class Game:
                 self.board[8],
             )
         )
-        print("Enter [0-8]:")
+        self.show("Enter [0-8]:")
         # loop through until the game was won or tied
         while not self.game_is_over(self.board) and not self.tie(self.board):
             self.get_human_spot()
             if not self.game_is_over(self.board) and not self.tie(self.board):
                 self.eval_board()
 
-            print(
+            self.show(
                 " %s | %s | %s \n===+===+===\n %s | %s | %s \n===+===+===\n %s | %s | %s \n"
                 % (
                     self.board[0],
@@ -42,7 +52,7 @@ class Game:
                 )
             )
 
-        print("Game over")
+        self.show("Game over")
 
     def get_human_spot(self):
         spot = None
