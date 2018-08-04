@@ -1,19 +1,107 @@
 import sys
+import curses
+import random
+import time
 
 
-BAD_USER_INPUT = "The square you entered is not on the board!"
-SPOT_ALREADY_SELECTED = "You've already placed a piece in that square!"
-SPOT_TAKEN_BY_OPPONENT = "Your opponent has already taken that spot."
+class Game:
+    def __call__(self, stdscr):
+        """Runs the game in a curses window.
+
+        This is the main event loop for the game.
+
+        Args:
+            stdscr: A curses.Window object
+
+        Example:
+            >>> game = Game()
+            >>> curses.wrapper(game)
+        """
+        screen = Screen(stdscr)
+
+        screen.show_welcome_screen()
+        key = screen.get_key(["q", "1"])
+        if key == "q":
+            return
+        elif key == "1":
+            player1, player2 = Human(), Computer()
+
+        board = Board(tokens=[player1.token, player2.token])
+        try:
+            screen.play_board(board, player1, player2)
+        except PlayerQuitException:
+            pass
 
 
-class TicTacToeException(Exception):
-    pass
+class Screen:
+    def __init__(self, stdscr):
+        self.s = stdscr
 
-class SpotAlreadySelectedException(TicTacToeException):
-    pass
+    def show_welcome_screen(self):
+        self.s.clear()
+        self.s.addstr(0, 0, "Let's play Tic Tac Toe!")
+        self.s.addstr(2, 0, "Which type of game would you like to play?")
+        self.s.addstr(3, 0, "(1) Human v Computer")
+        self.s.addstr(4, 0, "(2) Human v Human")
+        self.s.addstr(5, 0, "(3) Computer v Computer")
+        self.s.addstr(7, 0, "Enter [1] or Q to quit: ")
+        self.s.refresh()
 
-class SpotTakenByOpponentException(TicTacToeException):
-    pass
+    def play_board(self, board, player1, player2):
+        while not board.is_over() and not board.is_tie():
+            self.show_player_move(board, player1)
+            if not board.is_over() and not board.is_tie():
+                self.show_player_move(board, player2)
+
+    def show_player_move(self, board, player):
+        if isinstance(player, Human):
+            self.show_human_move(board, player)
+        elif isinstance(player, Computer):
+            self.show_computer_move(board, player)
+
+    def show_human_move(self, board, human):
+        self.s.clear()
+        self.s.refresh()
+        self.s.addstr(0, 0, str(board))
+        self.s.addstr(6, 0, "Enter [1-9] or Q to quit: ")
+        input_yx = self.s.getyx()
+        error_message_y = self.s.getyx()[0] + 1
+        while True:
+            key = self.get_key(yx=input_yx)
+            if key == "q":
+                raise PlayerQuitException()
+            try:
+                board[key] = human.token
+            except KeyNotOnBoardError:
+                error_message = "That key was not one of your options."
+            except SpotAlreadySelectedError:
+                error_message = "You've already placed a token in that square!"
+            except SpotTakenByOpponentError:
+                error_message = "Your opponent has already claimed that square."
+            else:
+                break
+            self.s.addstr(error_message_y, 0, error_message)
+
+    def show_computer_move(self, board, computer):
+        self.s.clear()
+        self.s.refresh()
+        self.s.addstr(0, 0, str(board))
+        self.s.addstr(6, 0, f"{computer}'s turn...")
+        move = computer.eval(board)
+        board[move] = computer.token
+        self.s.refresh()
+        time.sleep(1)
+        self.s.addstr(0, 0, str(board))
+
+    def get_key(self, keys=None, yx=None):
+        curses.echo()
+        yx = yx or self.s.getyx()
+        while True:
+            key = self.s.getkey(*yx)
+            if keys is None or key in keys:
+                break
+        curses.noecho()
+        return key
 
 
 class Board:
@@ -38,7 +126,13 @@ class Board:
         )
 
     def __getitem__(self, key):
-        return self._board[key]
+        """Returns the token at a particular square."""
+        try:
+            token = self._board[int(key)]
+        except (ValueError, IndexError):
+            raise KeyNotOnBoardError()
+        else:
+            return token
 
     def __setitem__(self, key, value):
         """Places a token on the board.
@@ -47,104 +141,18 @@ class Board:
         """
         prev = self[key]
         if prev == value:
-            raise SpotAlreadySelectedException()
+            raise SpotAlreadySelectedError()
         elif prev in self.tokens:
-            raise SpotTakenByOpponentException()
-        self._board[key] = value
-
-
-class Game:
-    def __init__(self, file=None):
-        if file is None:
-            self._file = sys.stdout
-        else:
-            self._file = open(file, "w+", 1)
-
-        self.com = "X"  # the computer's marker
-        self.hum = "O"  # the user's marker
-        self.board = Board(tokens=[self.com, self.hum])
-
-    def draw(self, msg):
-        """Draw something to the game buffer."""
-        self._file.write(str(msg))
-
-    def start_game(self):
-        # start by printing the board
-        self.draw(self.board)
-        # loop through until the game was won or tied
-        while not self.game_is_over(self.board) and not self.tie(self.board):
-            self.get_human_spot()
-            if not self.game_is_over(self.board) and not self.tie(self.board):
-                self.eval_board()
-
-            self.draw(self.board)
-
-        self.draw("Game over")
-
-    def get_human_spot(self, simulate_key=None):
-        in_turn = True
-        while in_turn:
-            if simulate_key is not None:
-                key = simulate_key
-                in_turn = False
-                self.draw(f"Enter [0-8]: {key}\n")
-            else:
-                key = input("Enter [0-8]: ")
-
-            try:
-                self.board[int(key)] = self.hum
-            except (ValueError, IndexError):
-                self.draw(BAD_USER_INPUT+'\n')
-            except SpotAlreadySelectedException:
-                self.draw(SPOT_ALREADY_SELECTED+'\n')
-            except SpotTakenByOpponentException:
-                self.draw(SPOT_TAKEN_BY_OPPONENT+'\n')
-            else:
-                in_turn = False
-
-    def eval_board(self):
-        spot = None
-        while spot is None:
-            if self.board[4] == "4":
-                spot = 4
-                self.board[spot] = self.com
-            else:
-                spot = self.get_best_move(self.board, self.com)
-                if self.board[spot] != "X" and self.board[spot] != "O":
-                    self.board[spot] = self.com
-                else:
-                    spot = None
-
-    def get_best_move(self, board, next_player, depth=0, best_score={}):
-        available_spaces = [s for s in board if s != "X" and s != "O"]
-        best_move = None
-
-        for avail in available_spaces:
-            board[int(avail)] = self.com
-            if self.game_is_over(board):
-                best_move = int(avail)
-                board[int(avail)] = avail
-                return best_move
-            else:
-                board[int(avail)] = self.hum
-                if self.game_is_over(board):
-                    best_move = int(avail)
-                    board[int(avail)] = avail
-                    return best_move
-                else:
-                    board[int(avail)] = avail
-
-        if best_move:
-            return best_move
-        else:
-            return int(available_spaces[0])
+            raise SpotTakenByOpponentError()
+        self._board[int(key)] = value
 
     def three_in_a_row(self, *args):
         return (
-            args[0] == args[1] == args[2] == "X" or args[0] == args[1] == args[2] == "O"
+            args[0] == args[1] == args[2] == self.tokens[0] or args[0] == args[1] == args[2] == self.tokens[1]
         )
 
-    def game_is_over(self, b):
+    def is_over(self):
+        b = self._board
         return (
             self.three_in_a_row(b[0], b[1], b[2]) == 1
             or self.three_in_a_row(b[3], b[4], b[5]) == 1
@@ -156,10 +164,52 @@ class Game:
             or self.three_in_a_row(b[2], b[4], b[6]) == 1
         )
 
-    def tie(self, b):
-        return len([s for s in b if s == "X" or s == "O"]) == 9
+    def is_tie(self):
+        return len([s for s in self._board if s in self.tokens]) == 9
+
+    def get_available_spaces(self):
+        return [s for s in self._board if s not in self.tokens]
+
+
+class Player:
+    label = None
+
+    def __init__(self, label=None):
+        if label is not None:
+            self.label = label
+
+    def __str__(self):
+        return self.label
+
+class Human(Player):
+    label = "Human"
+    token = "X"
+
+class Computer(Player):
+    label = "Computer"
+    token = "O"
+
+    def eval(self, board):
+        available_spaces = board.get_available_spaces()
+        return random.choice(available_spaces)
+
+
+class TicTacToeError(Exception):
+    pass
+
+class PlayerQuitException(TicTacToeError):
+    pass
+
+class KeyNotOnBoardError(TicTacToeError):
+    pass
+
+class SpotAlreadySelectedError(TicTacToeError):
+    pass
+
+class SpotTakenByOpponentError(TicTacToeError):
+    pass
 
 
 if __name__ == "__main__":
     game = Game()
-    game.start_game()
+    curses.wrapper(game)
