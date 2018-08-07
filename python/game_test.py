@@ -1,5 +1,24 @@
+from unittest.mock import Mock
 import pytest
-from game import Board, KeyNotOnBoardError, SpotAlreadySelectedError, SpotTakenByOpponentError
+import game
+from game import Game, Board, KeyNotOnBoardError, SpotAlreadySelectedError, SpotTakenByOpponentError
+
+
+@pytest.fixture
+def stdscr():
+    _curses = game.curses
+    game.curses = Mock()
+    stdscr = Mock()
+    stdscr.getyx = Mock(return_value=(0,0))
+    yield stdscr
+    game.curses = _curses
+
+
+def test_quit_game(stdscr):
+    game = Game()
+    stdscr.getkey = Mock(return_value="q")
+    game(stdscr)
+
 
 
 @pytest.fixture
