@@ -1,8 +1,10 @@
 from unittest.mock import Mock
 import pytest
 import game
-from game import Game, Board, KeyNotOnBoardError, SpotAlreadySelectedError, SpotTakenByOpponentError
+from game import Game, Board, Player, KeyNotOnBoardError, SpotAlreadySelectedError, SpotTakenByOpponentError, ImproperTokenError
 
+
+# Functional tests: Simulate playing the game ----
 
 @pytest.fixture
 def stdscr():
@@ -20,11 +22,11 @@ def test_quit_game(stdscr):
     game(stdscr)
 
 
+# Board tests ----
 
 @pytest.fixture
 def board():
     return Board()
-
 
 def test_board_handles_bad_user_input(board):
     for bad_key in ["9", "q"]:
@@ -40,3 +42,12 @@ def test_board_prevents_picking_same_spot_as_opponent(board):
     board[0] = "X"
     with pytest.raises(SpotTakenByOpponentError):
         board[0] = "O"
+
+
+# Player tests ----
+
+def test_player_cannot_set_improper_token():
+    player = Player()
+    for improper_token in ["[", "1"]:
+        with pytest.raises(ImproperTokenError):
+            player.token = improper_token

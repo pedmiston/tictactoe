@@ -2,6 +2,7 @@ import sys
 import curses
 import random
 import time
+import string
 
 
 class Game:
@@ -31,8 +32,7 @@ class Game:
         elif key == "3":
             player1, player2 = Computer(), Computer()
 
-        player1.token = 'X'
-        player2.token = 'O'
+        screen.edit_player_settings(player1, player2)
 
         board = Board(tokens=[player1.token, player2.token])
         try:
@@ -54,6 +54,45 @@ class Screen:
         self.s.addstr(5, 0, "(3) Computer v Computer")
         self.s.addstr(7, 0, "Enter [1-3] or Q to quit: ")
         self.s.refresh()
+
+    def edit_player_settings(self, player1, player2):
+
+        # Draw entire player settings screen before getting input
+        self.s.clear()
+        self.s.addstr(0, 0, "Edit player settings")
+        self.s.addstr(2, 0, f"Player 1 ({player1}) token: ")
+        player1_token_yx = self.s.getyx()
+        self.s.addstr("X")
+        self.s.addstr(3, 0, f"Player 2 ({player2}) token: ")
+        player2_token_yx = self.s.getyx()
+        self.s.addstr("O")
+
+        # Edit player1 settings
+        while True:
+            self.s.addstr(5, 0, "Enter the token to use for player 1.")
+            key = self.get_key(yx=player1_token_yx)
+            try:
+                player1.token = key
+            except ImproperTokenError:
+                self.s.addstr(6, 0, "You can't use that as a token.")
+            else:
+                self.s.addstr(player1_token_yx[0], player1_token_yx[1], player1.token)
+                break
+
+        # Edit player2 settings
+        while True:
+            self.s.addstr(5, 0, "Enter the token to use for player 2.")
+            key = self.get_key(yx=player2_token_yx)
+            if key.upper() == player1.token:
+                self.s.addstr(6, 0, "You must use a different token from player 1.")
+            else:
+                try:
+                    player2.token = key
+                except ImproperTokenError:
+                    self.s.addstr(6, 0, "You can't use that as a token.")
+                else:
+                    self.s.addstr(player2_token_yx[0], player2_token_yx[1], player2.token)
+                    break
 
     def play_board(self, board, player1, player2):
         while not board.is_over() and not board.is_tie():
@@ -189,6 +228,17 @@ class Player:
     def __str__(self):
         return self.label
 
+    @property
+    def token(self):
+        return self._token
+
+    @token.setter
+    def token(self, token):
+        if token not in string.ascii_lowercase:
+            raise ImproperTokenError()
+        self._token = token.upper()
+
+
 class Human(Player):
     label = "Human"
 
@@ -213,6 +263,9 @@ class SpotAlreadySelectedError(TicTacToeError):
     pass
 
 class SpotTakenByOpponentError(TicTacToeError):
+    pass
+
+class ImproperTokenError(TicTacToeError):
     pass
 
 
