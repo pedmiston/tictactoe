@@ -14,17 +14,25 @@ class Game:
             stdscr: A curses.Window object
 
         Example:
+            >>> import curses
             >>> game = Game()
             >>> curses.wrapper(game)
         """
         screen = Screen(stdscr)
 
         screen.show_welcome_screen()
-        key = screen.get_key(["q", "1"])
+        key = screen.get_key(["q", "1", "2", "3"])
         if key == "q":
             return
         elif key == "1":
             player1, player2 = Human(), Computer()
+        elif key == "2":
+            player1, player2 = Human(), Human()
+        elif key == "3":
+            player1, player2 = Computer(), Computer()
+
+        player1.token = 'X'
+        player2.token = 'O'
 
         board = Board(tokens=[player1.token, player2.token])
         try:
@@ -44,7 +52,7 @@ class Screen:
         self.s.addstr(3, 0, "(1) Human v Computer")
         self.s.addstr(4, 0, "(2) Human v Human")
         self.s.addstr(5, 0, "(3) Computer v Computer")
-        self.s.addstr(7, 0, "Enter [1] or Q to quit: ")
+        self.s.addstr(7, 0, "Enter [1-3] or Q to quit: ")
         self.s.refresh()
 
     def play_board(self, board, player1, player2):
@@ -183,11 +191,9 @@ class Player:
 
 class Human(Player):
     label = "Human"
-    token = "X"
 
 class Computer(Player):
     label = "Computer"
-    token = "O"
 
     def eval(self, board):
         available_spaces = board.get_available_spaces()
