@@ -3,6 +3,10 @@ import curses
 import random
 import time
 import string
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class Game:
@@ -22,6 +26,7 @@ class Game:
         screen = Screen(stdscr)
 
         # Show welcome and ask for game type
+        logger.info("Showing welcome screen")
         screen.show_welcome_screen()
         key = screen.get_key(["q", "1", "2", "3"])
         if key == "q":
@@ -34,15 +39,16 @@ class Game:
             player1, player2 = Computer(), Computer()
 
         # Modify players with updated settings
+        logger.info("Editing player settings")
         screen.edit_player_settings(player1, player2)
 
         # Play the game until it's over or a player quits
-        board = Board(tokens=[player1.token, player2.token])
+        logger.info("Playing the board")
+        self.board = Board(tokens=[player1.token, player2.token])
         try:
-            screen.play_board(board, player1, player2)
+            screen.play_board(self.board, player1, player2)
         except PlayerQuitException:
             pass
-
 
 
 class Screen:
@@ -51,6 +57,7 @@ class Screen:
     Unifies different views and common screen operations
     that utilizes a curses Window.
     """
+
     def __init__(self, stdscr):
         self.s = stdscr
 
@@ -104,7 +111,9 @@ class Screen:
                 except ImproperTokenError:
                     self.s.addstr(6, 0, "You can't use that as a token.")
                 else:
-                    self.s.addstr(player2_token_yx[0], player2_token_yx[1], player2.token)
+                    self.s.addstr(
+                        player2_token_yx[0], player2_token_yx[1], player2.token
+                    )
                     break
 
     def play_board(self, board, player1, player2):
@@ -212,7 +221,8 @@ class Board:
 
     def three_in_a_row(self, *args):
         return (
-            args[0] == args[1] == args[2] == self.tokens[0] or args[0] == args[1] == args[2] == self.tokens[1]
+            args[0] == args[1] == args[2] == self.tokens[0]
+            or args[0] == args[1] == args[2] == self.tokens[1]
         )
 
     def is_over(self):
@@ -259,6 +269,7 @@ class Player:
 class Human(Player):
     label = "Human"
 
+
 class Computer(Player):
     label = "Computer"
 
@@ -270,17 +281,22 @@ class Computer(Player):
 class TicTacToeError(Exception):
     pass
 
+
 class PlayerQuitException(TicTacToeError):
     pass
+
 
 class KeyNotOnBoardError(TicTacToeError):
     pass
 
+
 class SpotAlreadySelectedError(TicTacToeError):
     pass
 
+
 class SpotTakenByOpponentError(TicTacToeError):
     pass
+
 
 class ImproperTokenError(TicTacToeError):
     pass
