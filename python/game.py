@@ -21,6 +21,7 @@ class Game:
         """
         screen = Screen(stdscr)
 
+        # Show welcome and ask for game type
         screen.show_welcome_screen()
         key = screen.get_key(["q", "1", "2", "3"])
         if key == "q":
@@ -32,8 +33,10 @@ class Game:
         elif key == "3":
             player1, player2 = Computer(), Computer()
 
+        # Modify players with updated settings
         screen.edit_player_settings(player1, player2)
 
+        # Play the game until it's over or a player quits
         board = Board(tokens=[player1.token, player2.token])
         try:
             screen.play_board(board, player1, player2)
@@ -41,7 +44,13 @@ class Game:
             pass
 
 
+
 class Screen:
+    """A Tic Tac Toe Screen
+
+    Unifies different views and common screen operations
+    that utilizes a curses Window.
+    """
     def __init__(self, stdscr):
         self.s = stdscr
 
@@ -60,9 +69,13 @@ class Screen:
         # Draw entire player settings screen before getting input
         self.s.clear()
         self.s.addstr(0, 0, "Edit player settings")
+
+        ## Draw player1 settings
         self.s.addstr(2, 0, f"Player 1 ({player1}) token: ")
         player1_token_yx = self.s.getyx()
         self.s.addstr("X")
+
+        ## Draw player2 settings
         self.s.addstr(3, 0, f"Player 2 ({player2}) token: ")
         player2_token_yx = self.s.getyx()
         self.s.addstr("O")
@@ -105,6 +118,9 @@ class Screen:
             self.show_human_move(board, player)
         elif isinstance(player, Computer):
             self.show_computer_move(board, player)
+        else:
+            # smells!
+            raise TicTacToeException()
 
     def show_human_move(self, board, human):
         self.s.clear()
@@ -130,6 +146,7 @@ class Screen:
             self.s.addstr(error_message_y, 0, error_message)
 
     def show_computer_move(self, board, computer):
+        """Animate the Computer's move."""
         self.s.clear()
         self.s.refresh()
         self.s.addstr(0, 0, str(board))
