@@ -41,6 +41,17 @@ class Game:
     player1 = None
     player2 = None
 
+    def __init__(self, keep_game_log=False, log_file=None):
+        if log_file:
+            handler = logging.FileHandler(log_file)
+            handler.setLevel(logging.INFO)
+            logger.removeHandler(logger.handlers[0])
+            logger.addHandler(handler)
+
+        if keep_game_log or log_file:
+            logger.setLevel(logging.INFO)
+
+
     def __call__(self, stdscr):
         """Run the game as a terminal application in a curses window.
 
@@ -77,7 +88,18 @@ class Game:
         self.edit_player_settings()
 
         # Set player order
-        # self.set_player_order
+        self.screen.draw_player_order(self.player1, self.player2)
+        key = self.screen.get_key(["1", "2", "3"])
+        if key == "1":
+            pass
+        elif key == "2":
+            self.player1, self.player2 = self.player2, self.player1
+        elif key == "3":
+            if random.random() >= 0.5:
+                self.player1, self.player2 = self.player2, self.player1
+        else:
+            raise TicTacToeError()
+        logger.info(f"{self.player1} is going first")
 
         # Play the game until it's over or a player quits
         self.board = Board(tokens=[self.player1.token, self.player2.token])
@@ -205,6 +227,15 @@ class Screen:
         self.s.refresh()
         time.sleep(1)
         self.s.addstr(0, 0, str(board))
+
+    def draw_player_order(self, player1, player2):
+        self.s.clear()
+        self.s.addstr(0, 0, "Who goes first?")
+        self.s.addstr(2, 0, f"(1) {player1}")
+        self.s.addstr(3, 0, f"(2) {player2}")
+        self.s.addstr(4, 0, f"(3) Flip a coin")
+        self.s.addstr(6, 0, "Enter [1-3]: ")
+        self.s.refresh()
 
     def get_key(self, keys=None, yx=None):
         curses.echo()
@@ -345,9 +376,9 @@ class ImproperTokenError(TicTacToeError):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--verbose', action='store_true', help='send log to stdout')
+    parser.add_argument('-l', '--logging', action='store_true', help='write game log')
     args = parser.parse_args()
-    if args.verbose:
+    if args.logging:
         logger.setLevel(logging.DEBUG)
     game = Game()
     curses.wrapper(game)
