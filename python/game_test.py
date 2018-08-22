@@ -21,25 +21,27 @@ def stdscr():
     _curses = game.curses
     game.curses = Mock()
     stdscr = Mock()
-    stdscr.getyx = Mock(return_value=(0, 0))
+    stdscr.getyx.return_value = (0, 0)
+    stdscr.subwin().getyx.return_value = (0, 0)
     yield stdscr
     game.curses = _curses
 
 
 def test_quit_game(stdscr, tmpdir):
-    tmp_game_log = tmpdir.mkdir('game').join('game.log')
+    tmp_game_log = tmpdir.mkdir("game").join("game.log")
     game = Game(log_file=str(tmp_game_log))
     stdscr.getkey = Mock(return_value="q")
     game(stdscr)
     assert "player quit the game" in tmp_game_log.read()
 
 
-def test_play_human_v_human_game(stdscr):
-    game = Game()
+def test_play_human_v_human_game(stdscr, tmpdir):
+    tmp_game_log = tmpdir.mkdir("game").join("game.log")
+    game = Game(log_file=str(tmp_game_log))
     stdscr.getkey.side_effect = [
         "2",  # Human v Human game type
-        "x",  # Human1 token
-        "o",  # Human2 token
+        # "x",  # Human1 token
+        # "o",  # Human2 token
         "1",  # Human1 goes first
         "0",  # Human1 turn
         "3",  # Human2 turn
@@ -47,24 +49,25 @@ def test_play_human_v_human_game(stdscr):
         "4",  # Human2 turn
         "2",  # Human1 wins
     ]
+    stdscr.subwin().getkey.side_effect = ["x", "o"]  # Human1 token  # Human2 token
     game(stdscr)
-    assert game.board.is_over()
+    assert "game over" in tmp_game_log.read()
 
 
 def test_switch_order(stdscr, tmpdir):
-    tmp_game_log = tmpdir.mkdir('game').join('game.log')
+    tmp_game_log = tmpdir.mkdir("game").join("game.log")
     game = Game(log_file=str(tmp_game_log))
     stdscr.getkey.side_effect = [
         "2",  # Human v Human game type
-        "x",  # Player1 token
-        "o",  # Player2 token
+        # "x",  # Player1 token
+        # "o",  # Player2 token
         "2",  # Player2 goes first
         "4",  # Player2 places token
         "q",  # quit
     ]
+    stdscr.subwin().getkey.side_effect = ["x", "o"]  # Human1 token  # Human2 token
     game(stdscr)
     assert "Player2 is going first" in tmp_game_log.read()
-    assert game.board[4] == "O"
 
 
 # Board tests ----
