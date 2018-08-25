@@ -9,6 +9,8 @@ from game import (
     SpotAlreadySelectedError,
     SpotTakenByOpponentError,
     ImproperTokenError,
+    DuplicateTokenError,
+    HumanSettingsWindow,
 )
 
 
@@ -17,31 +19,43 @@ from game import (
 
 @pytest.fixture
 def stdscr():
-    """Mock a curses terminal application."""
-    _curses = game.curses
-    game.curses = Mock()
+    """A mock of a curses window."""
     stdscr = Mock()
     stdscr.getyx.return_value = (0, 0)
     stdscr.subwin().getyx.return_value = (0, 0)
+
+    # mock the curses module and put it back when done
+    _curses = game.curses
+    game.curses = Mock()
     yield stdscr
     game.curses = _curses
 
 
-def test_quit_game(stdscr, tmpdir):
-    tmp_game_log = tmpdir.mkdir("game").join("game.log")
-    game = Game(log_file=str(tmp_game_log))
+@pytest.fixture
+def logging_game(tmpdir):
+    """A game that logs to a pytest tmpfile."""
+    tmp_log = tmpdir.mkdir("game").join("game.log")
+    game = Game(log_file=str(tmp_log))
+
+    def read_log():
+        return tmp_log.read()
+
+    game.read_log = read_log
+
+    return game
+
+
+def test_quit_game(stdscr, logging_game):
     stdscr.getkey = Mock(return_value="q")
-    game(stdscr)
-    assert "player quit the game" in tmp_game_log.read()
+    logging_game(stdscr)
+    assert "player quit the game" in logging_game.read_log()
 
 
-def test_play_human_v_human_game(stdscr, tmpdir):
-    tmp_game_log = tmpdir.mkdir("game").join("game.log")
-    game = Game(log_file=str(tmp_game_log))
+def test_play_human_v_human_game(stdscr, logging_game):
     stdscr.getkey.side_effect = [
         "2",  # Human v Human game type
-        # "x",  # Human1 token
-        # "o",  # Human2 token
+        # Human1 token
+        # Human2 token
         "1",  # Human1 goes first
         "0",  # Human1 turn
         "3",  # Human2 turn
@@ -50,24 +64,22 @@ def test_play_human_v_human_game(stdscr, tmpdir):
         "2",  # Human1 wins
     ]
     stdscr.subwin().getkey.side_effect = ["x", "o"]  # Human1 token  # Human2 token
-    game(stdscr)
-    assert "game over" in tmp_game_log.read()
+    logging_game(stdscr)
+    assert "game over" in logging_game.read_log()
 
 
-def test_switch_order(stdscr, tmpdir):
-    tmp_game_log = tmpdir.mkdir("game").join("game.log")
-    game = Game(log_file=str(tmp_game_log))
+def test_switch_order(stdscr, logging_game):
     stdscr.getkey.side_effect = [
         "2",  # Human v Human game type
-        # "x",  # Player1 token
-        # "o",  # Player2 token
+        # Player1 token
+        # Player2 token
         "2",  # Player2 goes first
         "4",  # Player2 places token
         "q",  # quit
     ]
-    stdscr.subwin().getkey.side_effect = ["x", "o"]  # Human1 token  # Human2 token
-    game(stdscr)
-    assert "Player2 is going first" in tmp_game_log.read()
+    stdscr.subwin().getkey.side_effect = ["x", "o"]  # Player1 token  # Player2 token
+    logging_game(stdscr)
+    assert "Player2 is going first" in logging_game.read_log()
 
 
 # Board tests ----
@@ -104,3 +116,24 @@ def test_player_cannot_set_improper_token():
     for improper_token in ["[", "1"]:
         with pytest.raises(ImproperTokenError):
             player.token = improper_token
+
+
+def test_player_tokens_get_capitalized():
+    player = Player()
+    player.token = "x"
+    assert player.token == "X"
+
+
+def test_player_tokens_can_be_capitalized():
+    player = Player()
+    player.token = "X"
+    assert player.token == "X"
+
+
+def test_player2_cannot_set_duplicate_token(stdscr):
+    token = "X"
+    player = Player()
+    stdscr.getkey.return_value = token
+    player_window = HumanSettingsWindow(stdscr, player)
+    with pytest.raises(DuplicateTokenError):
+        player_window.get_token(opponent_token=token)
