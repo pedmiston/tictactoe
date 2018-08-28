@@ -48,7 +48,7 @@ def logging_game(tmpdir):
 def test_quit_game(stdscr, logging_game):
     stdscr.getkey = Mock(return_value="q")
     logging_game(stdscr)
-    assert "player quit the game" in logging_game.read_log()
+    assert "Player quit the game" in logging_game.read_log()
 
 
 def test_play_human_v_human_game(stdscr, logging_game):
@@ -66,6 +66,17 @@ def test_play_human_v_human_game(stdscr, logging_game):
     stdscr.subwin().getkey.side_effect = ["x", "o"]  # Human1 token  # Human2 token
     logging_game(stdscr)
     assert "game over" in logging_game.read_log()
+
+def test_set_computer_difficulty(stdscr, logging_game):
+    stdscr.getkey.side_effect = [
+        "3",  # Computer v Computer game type
+        # Edit settings
+        "q",  # Quit at the order screen
+    ]
+    stdscr.subwin().getkey.side_effect = ["x", "1", "o", "2"]
+    logging_game(stdscr)
+    assert "Set Computer1 (Easy) difficulty to Easy" in logging_game.read_log()
+    assert "Set Computer2 (Medium) difficulty to Medium" in logging_game.read_log()
 
 
 def test_switch_order(stdscr, logging_game):
