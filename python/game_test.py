@@ -75,8 +75,8 @@ def test_set_computer_difficulty(stdscr, logging_game):
     ]
     stdscr.subwin().getkey.side_effect = ["x", "1", "o", "2"]
     logging_game(stdscr)
-    assert "Set Computer1 (Easy) difficulty to Easy" in logging_game.read_log()
-    assert "Set Computer2 (Medium) difficulty to Medium" in logging_game.read_log()
+    assert "Set difficulty of Computer1 to Easy" in logging_game.read_log()
+    assert "Set difficulty of Computer2 to Medium" in logging_game.read_log()
 
 
 def test_switch_order(stdscr, logging_game):

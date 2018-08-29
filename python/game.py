@@ -10,7 +10,7 @@ logger = logging.getLogger("game")
 
 class Game:
     def __init__(self, log_file="game.log"):
-        """Initialize the game with the option to write to a log file.
+        """Initialize the game with the option to write to a custom log file.
 
         Args:
             log_file: Name of log file. If log_file is None, no log is written.
@@ -34,14 +34,17 @@ class Game:
             >>> game = Game()
             >>> curses.wrapper(game)
         """
+        if curses.has_colors():
+            curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+
+        # Welcome the player and ask for game type
         logger.info("Starting a new game")
         welcome_screen = WelcomeScreen(stdscr)
         welcome_screen.draw()
         try:
             game_type = welcome_screen.get_game_type()
         except PlayerQuitException:
-            logger.info("Player quit the game")
-            return
+            return self.quit()
         logger.info(f"Setting up a {game_type} game")
 
         # Create players 1 and 2 based on game type
@@ -63,41 +66,19 @@ class Game:
         settings_screen = SettingsScreen(stdscr, player1, player2)
         settings_screen.draw()
 
-        # Edit player 1 token
-        while True:
-            error_msg = ""
-            try:
-                settings_screen.get_player1_token()
-            except ImproperTokenError:
-                error_msg = "You can't use that as a token."
-            else:
-                break
-            settings_screen.draw_error_message(error_msg)
-        settings_screen.draw()  # clear messages
-
-        # Edit Computer player difficulty
+        # Edit player 1 settings
+        settings_screen.get_player1_token()
+        logger.info(f"Set token for {player1} to {player1.token}.")
         if isinstance(player1, Computer):
             settings_screen.get_player1_difficulty()
-            settings_screen.draw()  # clear messages
+            logger.info(f"Set difficulty of {player1} to {player1.difficulty}.")
 
-        # Edit player 2 token
-        while True:
-            error_msg = ""
-            try:
-                settings_screen.get_player2_token()
-            except ImproperTokenError:
-                error_msg = "You can't use that as a token."
-            except DuplicateTokenError:
-                error_msg = "You must use a different token than Player 1."
-            else:
-                break
-            settings_screen.draw_error_message(error_msg)
-        settings_screen.draw()  # clear messages
-
-        # Edit Computer player difficulty
+        # Edit player 2 settings
+        settings_screen.get_player2_token()
+        logger.info(f"Set token for {player2} to {player2.token}.")
         if isinstance(player2, Computer):
             settings_screen.get_player2_difficulty()
-            settings_screen.draw()  # clear messages
+            logger.info(f"Set difficulty of {player2} to {player2.difficulty}.")
 
         # Set player order
         order_screen = OrderScreen(stdscr, player1, player2)
@@ -105,8 +86,7 @@ class Game:
         try:
             player1, player2 = order_screen.get_player_order()
         except PlayerQuitException:
-            logger.info("player quit the game")
-            return
+            return self.quit()
         else:
             logger.info(f"{player1} is going first")
 
@@ -119,9 +99,13 @@ class Game:
                 if not board.is_over() and not board.is_tie():
                     play_screen.show_player_move(player2)
         except PlayerQuitException:
-            logger.info("player quit the game")
+            return self.quit()
         else:
             logger.info("game over")
+
+    def quit(self):
+        logger.info("Player quit the game")
+
 
 
 class Screen:
@@ -177,19 +161,25 @@ class WelcomeScreen(Screen):
         self.s.clear()
         self.s.addstr(0, 0, "Let's play Tic Tac Toe!")
         self.s.addstr(2, 0, "Which type of game would you like to play?")
-        for i, game_type in self.game_types.items():
-            row = 2 + int(i)
-            self.s.addstr(row, 0, f"({i}) {game_type}")
+        self.draw_game_type(highlight="1")
         self.s.refresh()
 
         # set prompt_y 2 lines below current window cursor
         self.prompt_y = self.s.getyx()[0] + 2
 
+    def draw_game_type(self, highlight):
+        for i, game_type in self.game_types.items():
+            row = 2 + int(i)
+            if i == highlight:
+                self.s.addstr(row, 0, f"({i}) {game_type}", curses.A_STANDOUT)
+            else:
+                self.s.addstr(row, 0, f"({i}) {game_type}", curses.A_DIM)
+
     def get_game_type(self):
         choices = ["1", "2", "3", "q"]
         prompt = "Enter [1-3] or Q to quit: "
         curses.echo()
-        key = self.get_key(prompt=prompt, keys=choices)
+        key = self.get_key(prompt=prompt, keys=choices, default=choices[0])
         curses.noecho()
         if key == "q":
             raise PlayerQuitException()
@@ -198,17 +188,20 @@ class WelcomeScreen(Screen):
                 f"unknown key '{key}' not in game types: {self.game_types}"
             )
         else:
+            # highlight selected game type
+            self.draw_game_type(highlight=key)
+            self.s.refresh()
+            time.sleep(0.5)
             return self.game_types[key]
 
 
 class SettingsScreen(Screen):
     """A SettingsScreen has a main screen and two windows for player1 and player2."""
-    nlines = 4  # size of window
-    ncols = 80  #
-    buffer = 0  # lines between windows
+    nlines = 5  # size of window
+    ncols = 40  #
     window1_start_y = 1
-    window2_start_y = window1_start_y + nlines + buffer
-    prompt_y = window2_start_y + nlines + buffer
+    window2_start_y = window1_start_y + nlines
+    prompt_y = window2_start_y + nlines
     error_y = prompt_y + 1
 
     def __init__(self, stdscr, player1, player2):
@@ -239,35 +232,53 @@ class SettingsScreen(Screen):
         self.s.refresh()
 
     def get_player1_token(self):
-        self.draw_prompt(f"Enter a letter [A-Z] to use as a token for {self.window1.player} player 1.")
-        self.window1.get_token()
-        logger.info(f"Set {self.window1.player} token to {self.window1.player.token}.")
+        self.get_player_token(self.window1)
 
     def get_player2_token(self):
-        self.draw_prompt(f"Enter a letter [A-Z] to use as a token for {self.window2.player} player 2.")
-        self.window2.get_token(opponent_token=self.window1.player.token)
-        logger.info(f"Set {self.window2.player} token to {self.window2.player.token}.")
+        self.get_player_token(self.window2, opponent_token=self.window1.player.token)
+
+    def get_player_token(self, window, opponent_token=None):
+        prompt = f"Enter a letter [A-Z] to use as a token."
+        self.draw_prompt(prompt)
+        while True:
+            error_msg = ""
+            try:
+                window.get_token(opponent_token=opponent_token)
+            except ImproperTokenError:
+                error_msg = "You can't use that as a token."
+            except DuplicateTokenError:
+                error_msg = "You must use a different token than the other player."
+            else:
+                break
+            self.draw_error_message(error_msg)
+        self.s.touchline(self.prompt_y, 2)
+        self.s.refresh()
 
     def get_player1_difficulty(self):
-        self.draw_prompt("Enter [1=Easy 2=Medium 3=Hard] to set the computer difficulty.")
-        self.window1.get_difficulty()
-        logger.info(f"Set {self.window1.player} difficulty to {self.window1.player.difficulty}.")
+        self.get_player_difficulty(self.window1)
 
     def get_player2_difficulty(self):
-        self.draw_prompt("Enter [1=Easy 2=Medium 3=Hard] to set the computer difficulty.")
-        self.window2.get_difficulty()
-        logger.info(f"Set {self.window2.player} difficulty to {self.window2.player.difficulty}.")
+        self.get_player_difficulty(self.window2)
+
+    def get_player_difficulty(self, window):
+        if not isinstance(window.player, Computer):
+            raise TicTacToeError(f"can only set difficulty for computer players, not players of type {type(window.player)}")
+        self.draw_prompt("Enter [1=Easy 2=Medium 3=Hard] to set the difficulty.")
+        window.get_difficulty()
+        self.s.touchline(self.prompt_y, 2)
+        self.s.refresh()
 
     def draw_prompt(self, msg):
         self.s.addstr(self.prompt_y, 0, msg)
         self.s.refresh()
 
     def draw_error_message(self, msg):
-        self.s.addstr(self.error_y, 0, msg)
+        self.s.touchline(self.error_y, 1)
+        self.s.addstr(self.error_y, 0, msg, curses.color_pair(1))
         self.s.refresh()
 
 class PlayerSettingsWindow(Screen):
-    """Abstract base class for HumanSettingsWindow and ComputerSettingsWindow."""
+    """Base class for HumanSettingsWindow and ComputerSettingsWindow."""
 
     token_yx = (0, 0)
 
@@ -277,16 +288,15 @@ class PlayerSettingsWindow(Screen):
 
     def draw(self):
         self.s.box()
-        self.s.addstr(1, 1, f"{self.player} token: ")
+        self.s.addstr(1, 1, f"{self.player}", curses.A_BOLD)
+        self.s.addstr(2, 1, "Token: ")
         self.token_yx = self.s.getyx()
         self.s.addstr(self.player.token)
         self.s.refresh()
 
     def get_token(self, opponent_token=None):
         key = self.get_key(yx=self.token_yx, default=self.player.token)
-        if key == "q":
-            raise PlayerQuitException()
-        elif opponent_token is not None and key.upper() == opponent_token:
+        if opponent_token is not None and key.upper() == opponent_token:
             raise DuplicateTokenError()
 
         self.player.token = key  # may raise ImproperTokenError
@@ -305,19 +315,32 @@ class ComputerSettingsWindow(PlayerSettingsWindow):
 
     def draw(self):
         self.s.box()
-        self.s.addstr(1, 1, f"{self.player} token: ")
+        self.s.addstr(1, 1, f"{self.player} settings:")
+        self.s.addstr(2, 1, "Token: ")
         self.token_yx = self.s.getyx()
         self.s.addstr(self.player.token)
-        self.s.addstr(2, 1, "Difficulty: ")
-        self.difficulty_yx = self.s.getyx()
-        self.s.addstr("Easy", curses.A_UNDERLINE)
-        self.s.addstr(" | Medium | Hard")
+        self.draw_difficulty(highlight="1")
         self.s.refresh()
 
     def get_difficulty(self):
-        keys = ["1", "2", "3", "q"]
-        key = self.get_key(keys=keys, yx=self.difficulty_yx, default=keys[0])
+        keys = ["1", "2", "3"]
+        key = self.get_key(keys=keys)
+        self.draw_difficulty(highlight=key)
+        self.s.refresh()
+        time.sleep(0.5)
         self.player.difficulty = self.difficulties[key]
+
+    def draw_difficulty(self, highlight):
+        self.s.addstr(3, 1, "Difficulty: ")
+        keys = sorted(self.difficulties.keys())
+        for key in keys:
+            if key == highlight:
+                attr = curses.A_STANDOUT
+            else:
+                attr = curses.A_DIM
+            self.s.addstr(self.difficulties[key], attr)
+            if key != keys[-1]:
+                self.s.addstr(" | ")
 
 
 class OrderScreen(Screen):
@@ -333,7 +356,7 @@ class OrderScreen(Screen):
     def draw(self):
         self.s.clear()
         self.s.addstr(0, 0, "Who goes first?")
-        self.s.addstr(2, 0, f"(1) {self.player1}")
+        self.s.addstr(2, 0, f"(1) {self.player1}", curses.A_STANDOUT)
         self.s.addstr(3, 0, f"(2) {self.player2}")
         self.s.addstr(4, 0, f"(3) Flip a coin")
         self.s.refresh()
@@ -346,13 +369,13 @@ class OrderScreen(Screen):
         key = self.get_key(prompt=prompt, keys=keys, default=keys[0])
         if key == "q":
             raise PlayerQuitException()
-        elif key == "1":
+        elif key == "1":  # player1 goes first
             pass
-        elif key == "2":
+        elif key == "2":  # player2 goes first
             self.player1, self.player2 = self.player2, self.player1
         elif key == "3":
             # Flip a coin
-            if random.random() >= 0.5:
+            if random.random() >= 0.5:  # player2 goes first
                 self.player1, self.player2 = self.player2, self.player1
         else:
             raise TicTacToeError()
@@ -523,7 +546,6 @@ class Computer(Player):
     def difficulty(self, token):
         self._difficulty_label = token
         self._difficulty_func = getattr(self, f"difficulty_func_{token.lower()}")
-        self.label = f"{self.label} ({self._difficulty_label})"
 
     def difficulty_func_easy(self, board):
         available_spaces = board.get_available_spaces()
