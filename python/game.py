@@ -36,6 +36,7 @@ class Game:
         """
         if curses.has_colors():
             curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.curs_set(2) # make cursor highest visibility
 
         # Welcome the player and ask for game type
         logger.info("Starting a new game")
@@ -261,12 +262,14 @@ class SettingsScreen(Screen):
         self.get_player_difficulty(self.window2)
 
     def get_player_difficulty(self, window):
+        curses.curs_set(0) # make cursor invisible
         if not isinstance(window.player, Computer):
             raise TicTacToeError(f"can only set difficulty for computer players, not players of type {type(window.player)}")
         self.draw_prompt("Enter [1=Easy 2=Medium 3=Hard] to set the difficulty.")
         window.get_difficulty()
         self.s.touchline(self.prompt_y, 2)
         self.s.refresh()
+        curses.curs_set(2)
 
     def draw_prompt(self, msg):
         self.s.addstr(self.prompt_y, 0, msg)
@@ -444,8 +447,7 @@ class Board:
 
     def __str__(self):
         return (
-            " %s | %s | %s \n===+===+===\n %s | %s | %s \n===+===+===\n %s | %s | %s \n"
-            % (
+            " {0} {v} {1} {v} {2} \n{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}\n {3} {v} {4} {v} {5} \n{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}\n {6} {v} {7} {v} {8} \n".format(
                 self._board[0],
                 self._board[1],
                 self._board[2],
@@ -455,6 +457,9 @@ class Board:
                 self._board[6],
                 self._board[7],
                 self._board[8],
+                v = "|",
+                h = "=",
+                p = "+",
             )
         )
 
