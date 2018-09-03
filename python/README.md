@@ -1,8 +1,8 @@
-Play the game with python game.py
+Play the game with `python -m tictactoe`
 
 ## Development
 
 ```bash
 pipenv install --dev
-pipenv run pytest game_test.py
+pipenv run pytest
 ```
