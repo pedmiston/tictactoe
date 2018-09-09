@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 import pytest
 
-from tictactoe import game
+from tictactoe import app
 from tictactoe import exceptions
 from tictactoe.screens import Screen
 
@@ -13,17 +13,17 @@ def stdscr():
     stdscr.getyx.return_value = (0, 0)
 
     # mock the curses module
-    _curses = game.curses
-    game.curses = Mock()
+    _curses = app.curses
+    app.curses = Mock()
 
     # curses colors implement the bitwise-OR operator "|="
-    game.curses.color_pair.return_value = _curses.A_NORMAL
-    game.curses.A_STANDOUT = _curses.A_NORMAL
+    app.curses.color_pair.return_value = _curses.A_NORMAL
+    app.curses.A_STANDOUT = _curses.A_NORMAL
 
     yield stdscr
 
     # put the curses module back when done
-    game.curses = _curses
+    app.curses = _curses
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def logging_game(tmpdir):
     """A game that logs to a pytest tmpfile."""
     tmp_log = tmpdir.mkdir("game").join("game.log")
 
-    g = game.Game(log_file=str(tmp_log))
+    g = app.Game(log_file=str(tmp_log))
     Screen.choice_delay = 0  # fast mode
 
     # patch on a method for reading the log

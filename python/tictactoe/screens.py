@@ -3,7 +3,7 @@ import random
 import itertools
 import logging
 
-from .game import curses
+from .app import curses
 from .models import Human, Computer, Board
 from . import exceptions
 
