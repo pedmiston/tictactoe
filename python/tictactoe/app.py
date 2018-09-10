@@ -10,7 +10,8 @@ import curses
 
 from . import screens
 from . import exceptions
-from .models import Human, Computer, Board
+from .board import Board
+from .players import Human, Computer
 
 
 logger = logging.getLogger("game")

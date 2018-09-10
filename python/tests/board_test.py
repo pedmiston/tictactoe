@@ -1,6 +1,6 @@
 import pytest
 from tictactoe import exceptions
-from tictactoe.models import Board
+from tictactoe.board import Board
 
 
 @pytest.fixture

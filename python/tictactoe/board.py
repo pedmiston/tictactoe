@@ -2,6 +2,7 @@ import string
 import random
 
 from . import exceptions
+from .ai import algorithms
 
 
 class Board:
@@ -106,106 +107,12 @@ class Board:
     def available(self):
         return [s for s in self._board if s not in self.tokens]
 
+    def available_corners(self):
+        return [s for s in self.corners if self[s] not in self.tokens]
+
     @property
     def turn(self):
         return len([s for s in self._board if s in self.tokens])
 
     def get_last_token_location(self):
         return self.token_sequence[-1]
-
-
-class Player:
-    label = None
-    _token = None
-
-    def __init__(self, label=None):
-        if label is not None:
-            self.label = label
-
-    def __str__(self):
-        return self.label
-
-    @property
-    def token(self):
-        return self._token
-
-    @token.setter
-    def token(self, token):
-        token = token.upper()
-        if token not in string.ascii_uppercase:
-            raise exceptions.ImproperTokenError()
-        self._token = token
-
-
-class Human(Player):
-    label = "Human"
-
-
-class Computer(Player):
-    label = "Computer"
-
-    def __init__(self, label=None, difficulty="Easy", seed=None):
-        super().__init__(label=label)
-        self.difficulty = difficulty
-        self.prng = random.Random(seed)
-
-    def eval(self, board):
-        return self._difficulty_func(board)
-
-    @property
-    def difficulty(self):
-        return self._difficulty_label
-
-    @difficulty.setter
-    def difficulty(self, token):
-        self._difficulty_label = token
-        self._difficulty_func = getattr(self, f"difficulty_func_{token.lower()}")
-
-    def difficulty_func_easy(self, board):
-        return self.prng.choice(board.available)
-
-    def difficulty_func_medium(self, board):
-        # are there two of mine in a row? -> win
-        # are there two of my opponents in a row? -> block
-
-        if board.turn == 0:
-            move = "4"
-        else:
-            move = self.prng.choice(board.available)
-        return move
-
-    def difficulty_func_hard(self, board):
-        winning_move = board.find_two_in_a_row(token=self.token)
-        if winning_move != -1:
-            return winning_move
-
-        blocking_move = board.find_two_in_a_row(blocking_token=self.token)
-        if blocking_move != -1:
-            return blocking_move
-
-        if board.turn == 0:
-            move = self.choose_corner(board)
-        elif board.turn == 1:
-            prev_move = board.get_last_token_location()
-            if prev_move == "4":
-                move = self.choose_corner(board)
-            else:
-                move = "4"
-        elif board.turn == 2:
-            # first move was corner
-            move = self.choose_adjacent_corner(board)
-        else:
-            move = self.prng.choice(board.available)
-        return move
-
-    def choose_corner(self, board):
-        return self.prng.choice([s for s in board.available if s in board.corners])
-
-    def choose_adjacent_corner(self, board):
-        prev_corner = [s for s in board.corners if board[s] == self.token][0]
-        for a, b, c in board.winning_patterns:
-            if str(a) == prev_corner and board[b] == str(b) and board[c] == str(c):
-                return str(c)
-            elif str(c) == prev_corner and board[b] == str(b) and board[a] == str(a):
-                return str(a)
-        return -1

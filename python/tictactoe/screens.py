@@ -4,7 +4,8 @@ import itertools
 import logging
 
 from .app import curses
-from .models import Human, Computer, Board
+from .board import Board
+from .players import Human, Computer
 from . import exceptions
 
 logger = logging.getLogger("game")
@@ -30,7 +31,7 @@ class Screen:
         """Get a key press from the user.
 
         Args:
-            prompt: The text describing the accepted key presses.
+            prompt: The text to display describing the accepted key presses.
             keys: A list of keys to accept. If keys is None, accept any key.
             yx: A tuple of (y, x) screen coordinates of where to echo the key press.
             default: A key to use as default. If a default key is provided and
@@ -162,9 +163,12 @@ class TokenScreen(Screen):
 
     def update_player_tokens(self):
         log_fmt = "{player} selected token {player.token}"
+
+        # Update Player 1 token
         self.update_player_token(self.player1, self.player1_token_yx)
-        self.draw_error_message(msg=None)
         logger.info(log_fmt.format(player=self.player1))
+
+        # Update Player 2 token
         self.update_player_token(
             self.player2, self.player2_token_yx, opponent_token=self.player1.token
         )
@@ -200,7 +204,6 @@ class DifficultyScreen(Screen):
     difficulties = {"1": "Easy", "2": "Medium", "3": "Hard"}
 
     def __init__(self, stdscr, player1, player2):
-        """Initialize a screen for setting computer player difficulties."""
         super().__init__(stdscr)
         self.player1, self.player2 = player1, player2
         # Set flag to skip if neither player is a Computer

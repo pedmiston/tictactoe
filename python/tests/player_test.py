@@ -1,6 +1,6 @@
 import pytest
 from tictactoe import exceptions
-from tictactoe.models import Player
+from tictactoe.players import Player
 
 
 def test_player_cannot_set_improper_token():
