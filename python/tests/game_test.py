@@ -1,8 +1,8 @@
+"""Functional tests of people playing the game."""
 from unittest.mock import Mock
 import pytest
 
-from tictactoe import app
-from tictactoe import exceptions
+from tictactoe import app, screens, exceptions
 from tictactoe.screens import Screen
 
 
@@ -13,17 +13,17 @@ def stdscr():
     stdscr.getyx.return_value = (0, 0)
 
     # mock the curses module
-    _curses = app.curses
-    app.curses = Mock()
+    _curses = screens.curses
+    screens.curses = Mock()
 
-    # curses colors implement the bitwise-OR operator "|="
-    app.curses.color_pair.return_value = _curses.A_NORMAL
-    app.curses.A_STANDOUT = _curses.A_NORMAL
+    # mock the way curses colors implement the bitwise-OR operator "|="
+    screens.curses.color_pair.return_value = _curses.A_NORMAL
+    screens.curses.A_STANDOUT = _curses.A_NORMAL
 
     yield stdscr
 
-    # put the curses module back when done
-    app.curses = _curses
+    # teardown
+    screens.curses = _curses
 
 
 @pytest.fixture
@@ -37,7 +37,6 @@ def logging_game(tmpdir):
     # patch on a method for reading the log
     def read_log():
         return tmp_log.read()
-
     g.read_log = read_log
 
     return g
@@ -59,8 +58,9 @@ def test_play_human_v_human_game(stdscr, logging_game):
         "3",  # Player 2 turn
         "1",  # Player 1 turn
         "4",  # Player 2 turn
-        "2",  # Player 1 wins
-        "\n",  # End game
+        "2",  # Player 1 turn
+        "\n", # Player 1 wins screen
+        "q",  # Any key to quit
     ]
     logging_game(stdscr)
     assert "Player 1 wins" in logging_game.read_log()
@@ -81,8 +81,9 @@ def test_play_tie_game(stdscr, logging_game):
         "5",  # Player 2 turn
         "7",  # Player 1 turn
         "6",  # Player 2 turn
-        "8",  # Player 1 turn, tie game!
-        "\n",  # End game
+        "8",  # Player 1 turn
+        "\n", # Tie screen
+        "q",  # Any key to quit
     ]
     logging_game(stdscr)
     assert "Game ended in a tie" in logging_game.read_log()

@@ -1,8 +1,6 @@
 import string
 import random
-
-from . import exceptions
-from .ai import algorithms
+from . import ai, exceptions
 
 
 class Player:
@@ -37,17 +35,18 @@ class Computer(Player):
 
     def __init__(self, label=None, difficulty="Easy", seed=None):
         super().__init__(label=label)
-        self.difficulty = difficulty
         self.prng = random.Random(seed)
+        self.difficulty = difficulty
 
-    def eval(self, board):
-        return self._difficulty_func(self, board)
+    def move(self, board):
+        return self.difficulty_func(self, board)
 
     @property
     def difficulty(self):
-        return self._difficulty_label
+        return self.difficulty_label
 
     @difficulty.setter
-    def difficulty(self, token):
-        self._difficulty_label = token
-        self._difficulty_func = algorithms[token.lower()]
+    def difficulty(self, label):
+        """Set a player difficulty by selecting a function in the ai module."""
+        self.difficulty_label = label
+        self.difficulty_func = getattr(ai, label.lower())

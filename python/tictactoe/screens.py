@@ -2,11 +2,9 @@ import time
 import random
 import itertools
 import logging
+import curses
+from . import board, players, exceptions
 
-from .app import curses
-from .board import Board
-from .players import Human, Computer
-from . import exceptions
 
 logger = logging.getLogger("game")
 
@@ -27,16 +25,18 @@ class Screen:
     def draw_description(self, description):
         self.s.addstr(1, 0, description)
 
-    def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False):
+    def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False, show_help_text=False):
         """Get a key press from the user.
 
         Args:
             prompt: The text to display describing the accepted key presses.
             keys: A list of keys to accept. If keys is None, accept any key.
             yx: A tuple of (y, x) screen coordinates of where to echo the key press.
+                If not provided, the cursor position is used.
             default: A key to use as default. If a default key is provided and
                 ENTER is pressed, the default key will be returned.
             highlight: Whether to highlight the cell at the yx position.
+            show_help_text: Whether to show help text about the Enter key.
 
         Returns:
             key: A string of the key pressed by the user.
@@ -46,6 +46,16 @@ class Screen:
         yx = yx or self.s.getyx()
         if default is not None:
             self.s.addstr(yx[0], yx[1], default)
+
+            if show_help_text:
+                self.s.addstr(
+                    self.prompt_y + 1,
+                    0,
+                    "Press ENTER to accept the highlighted choice.",
+                    curses.color_pair(3),
+                )
+
+
         if highlight:
             self.s.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
         self.s.refresh()
@@ -65,10 +75,10 @@ class Screen:
         """Draw response choices.
 
         Args:
-            choices: dict of keys and labels.
-            highlight: key to highlight as default. Optional.
-            start_y: row to start drawing choices. If start_y is None,
-                one row below the current cursor position is used.
+            choices: dict of keyboard keys to response labels.
+            highlight: keyboard key of choice to highlight as the default key. Optional.
+            start_y: row to start drawing response choices. If not provided,
+                one row below the cursor position is used.
         """
         if start_y is None:
             start_y = self.s.getyx()[0] + 1
@@ -91,9 +101,10 @@ class Screen:
         self.s.insertln()
         if msg is None:
             return
-        error_attrs = curses.color_pair(1)
-        error_attrs |= curses.A_STANDOUT
-        self.s.addstr(f"!", error_attrs)
+        c = (
+            curses.color_pair(1) | curses.A_STANDOUT
+        )  # bitwise combine color with standout
+        self.s.addstr(f"!", c)
         self.s.addstr(f" {msg}", curses.color_pair(1))
 
 
@@ -117,10 +128,11 @@ class WelcomeScreen(Screen):
         self.prompt_y = self.s.getyx()[0] + 2
 
     def get_game_type(self):
+        """Returns the game type from a key press."""
         choices = ["1", "2", "3", "q"]
         prompt = "Enter [1-3] or Q to quit: "
         key = self.get_key(
-            prompt=prompt, keys=choices, default=choices[0], highlight=True
+            prompt=prompt, keys=choices, default=choices[0], highlight=True, show_help_text=True
         )
         if key == "q":
             raise exceptions.PlayerQuitException()
@@ -131,7 +143,6 @@ class WelcomeScreen(Screen):
 
         # highlight selected game type
         self.draw_choices(self.game_types, highlight=key, start_y=3)
-        self.s.refresh()
         time.sleep(self.choice_delay)
 
         return self.game_types[key]
@@ -208,12 +219,11 @@ class DifficultyScreen(Screen):
         self.player1, self.player2 = player1, player2
         # Set flag to skip if neither player is a Computer
         self.skip = not (
-            isinstance(self.player1, Computer) or isinstance(self.player2, Computer)
+            isinstance(self.player1, players.Computer) or isinstance(self.player2, players.Computer)
         )
 
     def draw(self):
         self.s.clear()
-        self.draw_title("Select difficulty")
         self.draw_choices(self.difficulties, highlight="1", start_y=2)
         self.s.refresh()
 
@@ -221,15 +231,18 @@ class DifficultyScreen(Screen):
         self.prompt_y = self.s.getyx()[0] + 2
 
     def update_computer_difficulties(self):
-        if isinstance(self.player1, Computer):
+        if isinstance(self.player1, players.Computer):
             self.get_difficulty(self.player1)
 
         self.draw_choices(self.difficulties, highlight="1", start_y=2)
-        if isinstance(self.player2, Computer):
+        if isinstance(self.player2, players.Computer):
             self.get_difficulty(self.player2)
 
     def get_difficulty(self, player):
-        self.draw_description(f"Set a difficulty for {player}")
+        self.draw_title(f"Set a difficulty for ")
+        y, x = self.s.getyx()
+        self.s.addstr(y, x, str(player), curses.color_pair(3) | curses.A_STANDOUT)
+
         keys = ["1", "2", "3"]
         prompt = f"Enter [1-3]: "
         key = self.get_key(prompt=prompt, keys=keys, default=keys[0], highlight=True)
@@ -264,7 +277,7 @@ class OrderScreen(Screen):
         self.s.refresh()
         self.prompt_y = self.s.getyx()[0] + 2
 
-    def get_player_order(self):
+    def reorder_players(self):
         prompt = "Enter [1-3] or Q to quit: "
         keys = ["1", "2", "3", "q"]
         key = self.get_key(prompt=prompt, keys=keys, default=keys[0], highlight=True)
@@ -291,20 +304,14 @@ class OrderScreen(Screen):
 class PlayScreen(Screen):
     """The PlayScreen is for playing TicTacToe."""
 
-    def __init__(self, stdscr, player1, player2):
+    def __init__(self, stdscr, board, player1, player2):
         super().__init__(stdscr)
         self.player1, self.player2 = player1, player2
-        self.board = Board(tokens=[player1.token, player2.token])
-
-        # Create a window for drawing the board
-        nlines = 6
-        ncols = 12
-        start_y, start_x = 2, 3
-        window = self.s.subwin(nlines, ncols, start_y, start_x)
-        self.board_window = BoardWindow(window, self.board)
+        self.board = board
+        self.board_window = BoardWindow.from_stdscr(stdscr, self.board)
 
         # Set prompt below board
-        self.prompt_y = start_y + nlines
+        self.prompt_y = 8
         self.error_y = self.prompt_y + 1
 
     def play(self):
@@ -330,23 +337,22 @@ class PlayScreen(Screen):
             self.s.addstr("The game ended in a tie.")
             logger.info("Game ended in a tie")
         else:
-            ixs = self.board.find_three_in_a_row()
-            self.board_window.highlight_three_in_a_row(*ixs)
+            self.board_window.highlight_winning_pattern()
             self.board_window.w.refresh()
             self.s.addstr(f"{winning_player} wins!", curses.A_STANDOUT)
             logger.info(f"{winning_player} wins")
 
         self.prompt_y += 1
-        prompt = "Press any key to quit the game."
+        prompt = "Press any key."
         self.get_key(prompt=prompt)
 
     def move_player(self, player):
         self.s.clear()
         self.s.addstr(0, 0, f"{player}'s turn")
         self.board_window.draw()
-        if isinstance(player, Human):
+        if isinstance(player, players.Human):
             move = self.get_human_move(player)
-        elif isinstance(player, Computer):
+        elif isinstance(player, players.Computer):
             move = self.show_computer_move(player)
         else:
             # smells!
@@ -381,13 +387,34 @@ class PlayScreen(Screen):
         """Animate the Computer's move."""
         self.draw_prompt(f"{computer_player}'s turn...")
         self.s.refresh()
-        move = computer_player.eval(self.board)
+        move = computer_player.move(self.board)
         self.board[move] = computer_player.token
         logger.info(f"{computer_player} placed a token on {move}")
         self.s.refresh()
         time.sleep(self.choice_delay * 2)
         self.board_window.draw()
         return int(move)
+
+
+class EndScreen(Screen):
+    def __init__(self, stdscr, board):
+        super().__init__(stdscr)
+        self.board_window = BoardWindow.from_stdscr(stdscr, board)
+
+    def draw(self):
+        self.s.clear()
+        self.draw_title("Game over!")
+        self.s.refresh()
+
+    def ask_play_again(self):
+        self.s.clear()
+        self.draw_title("Game over!")
+        self.board_window.draw()
+        self.board_window.highlight_winning_pattern()
+        self.board_window.w.refresh()
+        prompt = "Press ENTER to play again or any other key to exit."
+        key = self.get_key(prompt)
+        return (key == "\n")
 
 
 class BoardWindow:
@@ -398,6 +425,11 @@ class BoardWindow:
         rows_with_tokens = [0, 2, 4]
         cols_with_tokens = [1, 5, 9]
         self.token_yxs = list(itertools.product(rows_with_tokens, cols_with_tokens))
+
+    @classmethod
+    def from_stdscr(cls, stdscr, board, nlines=6, ncols=12, start_y=2, start_x=3):
+        window = stdscr.subwin(nlines, ncols, start_y, start_x)
+        return BoardWindow(window, board)
 
     def draw(self):
         v, h, p = "|", "=", "+"
@@ -431,7 +463,19 @@ class BoardWindow:
         y, x = self.token_yxs[i]
         self.w.chgat(y, x, 1, curses.A_STANDOUT)
 
-    def highlight_three_in_a_row(self, *ixs):
-        for i in ixs:
-            y, x = self.token_yxs[i]
+    def highlight_winning_pattern(self, *ixs):
+        spaces = self.board.find_winning_pattern()
+        for s in spaces:
+            y, x = self.token_yxs[s]
             self.w.chgat(y, x, 1, curses.A_STANDOUT)
+
+def configure_curses():
+    if curses.has_colors():
+        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.curs_set(0)  # make cursor invisible
+
+
+def game_has_computer_players(player1, player2):
+    return isinstance(player1, players.Computer) or isinstance(player2, players.Computer)

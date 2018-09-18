@@ -1,17 +1,8 @@
 import sys
-
 import itertools
 import logging
-
-# curses is in the python standard library, but it may not be available
-# on Windows because it depends on the GNU program ncurses.
-import curses
-
-
-from . import screens
-from . import exceptions
+from . import players, screens, exceptions
 from .board import Board
-from .players import Human, Computer
 
 
 logger = logging.getLogger("game")
@@ -19,7 +10,7 @@ logger = logging.getLogger("game")
 
 class Game:
     def __init__(self, log_file=None):
-        """Initialize a game with the option to write to a custom log file.
+        """Initialize a game with the option to write to a log file.
 
         Args:
             log_file: Name of log file. If log_file is None, no log is written.
@@ -40,7 +31,7 @@ class Game:
             >>> game = Game()
             >>> curses.wrapper(game)
         """
-        configure_curses()
+        screens.configure_curses()
 
         # Welcome the player and ask for game type
         logger.info("Starting a new game")
@@ -55,66 +46,73 @@ class Game:
         player1, player2 = create_players_from_game_type(game_type)
 
         # Set player tokens
+        player1.token = "X"
+        player2.token = "O"
         token_screen = screens.TokenScreen(stdscr, player1, player2)
         token_screen.draw()
         token_screen.update_player_tokens()
 
-        # Set computer player difficulties
-        difficulty_screen = screens.DifficultyScreen(stdscr, player1, player2)
-        if (
-            not difficulty_screen.skip
-        ):  # skip difficulty screen if neither player is a computer
+        if game_has_computer_players(game_type):
+            # Set computer player difficulties
+            difficulty_screen = screens.DifficultyScreen(stdscr, player1, player2)
             difficulty_screen.draw()
-            difficulty_screen.update_computer_difficulties()
+            try:
+                difficulty_screen.update_computer_difficulties()
+            except exceptions.PlayerQuitException:
+                return self.quit()
 
         # Set player order
         order_screen = screens.OrderScreen(stdscr, player1, player2)
         order_screen.draw()
         try:
-            player1, player2 = order_screen.get_player_order()
+            player1, player2 = order_screen.reorder_players()
         except exceptions.PlayerQuitException:
             return self.quit()
         logger.info(f"{player1} is going first")
 
         # Play the game until it's over or a player quits
-        play_screen = screens.PlayScreen(stdscr, player1, player2)
+        board = Board(tokens=[player1.token, player2.token])
+        play_screen = screens.PlayScreen(stdscr, board, player1, player2)
         try:
             play_screen.play()
         except exceptions.PlayerQuitException:
             return self.quit()
 
-        logger.info("Game over")
+        # Ask the player if they want to play again
+        end_screen = screens.EndScreen(stdscr, board)
+        play_again = end_screen.ask_play_again()
+        if play_again:
+            self(stdscr)  # smells!
+        else:
+            logger.info("Game over")
 
     def quit(self):
         logger.info("Player quit the game")
 
 
 def enable_logging(log_file):
+    """Configure the module logger to write to a file."""
     handler = logging.FileHandler(log_file, mode="w")
     handler.setLevel(logging.INFO)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
 
-def configure_curses():
-    if curses.has_colors():
-        curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.curs_set(0)  # make cursor invisible
+# TODO: Refactor game_type to be an enum type
 
 
 def create_players_from_game_type(game_type):
-    # Create players 1 and 2 based on game type
+    """Create players 1 and 2 based on game type."""
     if game_type == "Human v Computer":
-        player1, player2 = Human(), Computer()
+        player1, player2 = players.Human(), players.Computer()
     elif game_type == "Human v Human":
-        player1, player2 = Human("Player 1"), Human("Player 2")
+        player1, player2 = players.Human("Player 1"), players.Human("Player 2")
     elif game_type == "Computer v Computer":
-        player1, player2 = Computer("Computer 1"), Computer("Computer 2")
+        player1, player2 = players.Computer("Computer 1"), players.Computer("Computer 2")
     else:
-        raise TicTacToeError(f"unknown game type for key '{key}': {game_type}")
-
-    # Set default player tokens
-    player1.token = "X"
-    player2.token = "O"
-
+        raise TicTacToeError(f"unknown game type '{game_type}'")
     return player1, player2
+
+
+def game_has_computer_players(game_type):
+    return game_type != "Human v Human"
