@@ -2,7 +2,7 @@
 from unittest.mock import Mock
 import pytest
 
-from tictactoe import app, screens, exceptions
+from tictactoe import app, screens, players, exceptions
 from tictactoe.screens import Screen
 
 
@@ -115,3 +115,26 @@ def test_switch_order(stdscr, logging_game):
     ]
     logging_game(stdscr)
     assert "Player 2 is going first" in logging_game.read_log()
+
+
+@pytest.mark.parametrize("seed1,seed2", zip(range(1,10), range(10,1,-1)))
+def test_hard_ai_always_ties(stdscr, logging_game, seed1, seed2):
+    app.create_players_from_game_type = Mock()
+    app.create_players_from_game_type.return_value = (
+        players.Computer("Computer 1", seed=seed1),
+        players.Computer("Computer 2", seed=seed2),
+    )
+
+    stdscr.getkey.side_effect = [
+        "3",  # Computer v Computer game type
+        "x",  # Computer 1 token
+        "o",  # Computer 2 token
+        "3",  # Computer 1 difficulty: hard
+        "3",  # Computer 2 difficulty: hard
+        "1",  # Computer 1 goes first
+        # Play the game
+        "\n", # Tie screen
+        "q",  # Any key to quit
+    ]
+    logging_game(stdscr)
+    assert "Game ended in a tie" in logging_game.read_log()

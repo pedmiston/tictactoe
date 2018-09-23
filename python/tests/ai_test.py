@@ -1,5 +1,6 @@
 import random
 import pytest
+from tictactoe import ai
 from tictactoe.players import Computer
 from tictactoe.board import Board
 
@@ -24,19 +25,25 @@ def test_hard_computer_chooses_corner_as_first_move(hard_computer):
     assert move in board.corners
 
 
-@pytest.mark.skip
 def test_hard_computer_chooses_adjacent_corner_as_second_move(hard_computer):
     board = Board()
     board[0] = "X"
     board[1] = "O"
     move = hard_computer.move(board)
-    assert move == "6"
+    assert move == 6
 
     board = Board()
     board[0] = "X"
     board[3] = "O"
     move = hard_computer.move(board)
-    assert move == "2"
+    assert move == 2
+
+
+def test_hard_computer_chooses_opposite_corner_as_second_move(hard_computer):
+    board = Board()
+    board[0] = "X"
+    board[4] = "O"
+    assert hard_computer.move(board) == 8
 
 
 def test_hard_computer_wins_if_able(hard_computer):

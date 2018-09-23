@@ -21,6 +21,19 @@ def make_partial_patterns(winning_patterns):
     return partial_patterns
 
 
+def make_outer_patterns(winning_patterns):
+    """Create a list of outer patterns that don't include the center square."""
+    return [pattern for pattern in winning_patterns if 4 not in pattern]
+
+
+def make_diagonal_patterns(winning_patterns, corners):
+    diagonal_patterns = []
+    for s1, s2, s3 in winning_patterns:
+        if s2 == 4 and all(s in corners for s in [s1, s3]):
+            diagonal_patterns.append((s1, s2, s3))
+    return diagonal_patterns
+
+
 class Board:
     corners = [0, 2, 6, 8]
     middles = [1, 3, 5, 7]
@@ -35,6 +48,8 @@ class Board:
         (2, 4, 6),
     ]
     partial_patterns = make_partial_patterns(winning_patterns)
+    outer_patterns = make_outer_patterns(winning_patterns)
+    diagonal_patterns = make_diagonal_patterns(winning_patterns, corners)
 
     def __init__(self, tokens=None):
         """Initialize a board as a list of spaces and save player tokens."""
@@ -101,3 +116,19 @@ class Board:
 
     def available_corners(self):
         return [s for s in self.corners if self.b[s] not in self.tokens]
+
+    def find_adjacent_corner(self, token):
+        for s1, s2, s3 in self.outer_patterns:
+            if self.b[s1] == token and self.b[s2] == str(s2):
+                return s3
+            if self.b[s3] == token and self.b[s2] == str(s2):
+                return s1
+        return -1
+
+    def find_opposite_corner(self, token):
+        for s1, s2, s3 in self.diagonal_patterns:
+            if self.b[s1] == token:
+                return s3
+            if self.b[s3] == token:
+                return s1
+        return -1
