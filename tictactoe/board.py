@@ -1,7 +1,7 @@
 import itertools
 from collections import namedtuple
 
-from . import exceptions
+from tictactoe import exceptions
 
 
 # A Move is a space occupied by a token

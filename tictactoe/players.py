@@ -1,6 +1,6 @@
 import string
 import random
-from . import ai, exceptions
+from tictactoe import ai, exceptions
 
 
 class Player:

@@ -1,8 +1,8 @@
 import sys
 import itertools
 import logging
-from . import players, screens, exceptions
-from .board import Board
+from tictactoe import players, screens, exceptions
+from tictactoe.board import Board
 
 
 logger = logging.getLogger("game")
@@ -13,7 +13,7 @@ class Game:
         """Initialize a game with the option to write to a log file.
 
         Args:
-            log_file: Name of log file. If log_file is None, no log is written.
+            log_file: Name of log file. If None, no log file is written.
         """
         if log_file:
             enable_logging(log_file)

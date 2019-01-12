@@ -3,7 +3,7 @@ import random
 import itertools
 import logging
 import curses
-from . import board, players, exceptions
+from tictactoe import board, players, exceptions
 
 
 logger = logging.getLogger("game")
