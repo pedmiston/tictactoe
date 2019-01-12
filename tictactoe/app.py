@@ -83,7 +83,7 @@ class Game:
             return self.quit()
 
         # Ask the player if they want to play again
-        end_screen = screens.EndScreen(stdscr, board)
+        end_screen = screens.EndScreen(stdscr, board, board_window=play_screen.board_window)
         play_again = end_screen.ask_play_again()
         if play_again:
             self(stdscr)  # smells!

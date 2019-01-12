@@ -260,7 +260,7 @@ class DifficultyScreen(Screen):
     def get_difficulty(self, player):
         self.draw_title(f"Set a difficulty for ")
         y, x = self.s.getyx()
-        self.s.addstr(y, x, str(player), curses.color_pair(player.color_ix) | curses.A_STANDOUT)
+        self.s.addstr(y, x, str(player), curses.color_pair(player.color_ix))
 
         keys = ["1", "2", "3"]
         prompt = f"Enter [1-3]: "
@@ -379,7 +379,7 @@ class PlayScreen(Screen):
             # smells!
             raise TicTacToeException()
 
-        self.board_window.highlight_square(move)
+        self.board_window.highlight_square(move, player_color_ix=player.color_ix)
         self.board_window.w.refresh()
         time.sleep(self.choice_delay * 2)
 
@@ -418,9 +418,9 @@ class PlayScreen(Screen):
 
 
 class EndScreen(Screen):
-    def __init__(self, stdscr, board):
+    def __init__(self, stdscr, board, board_window):
         super().__init__(stdscr)
-        self.board_window = BoardWindow.from_stdscr(stdscr, board)
+        self.board_window = board_window
 
         # Set prompt below board
         self.prompt_y = 8
@@ -449,6 +449,7 @@ class BoardWindow:
         rows_with_tokens = [0, 2, 4]
         cols_with_tokens = [1, 5, 9]
         self.token_yxs = list(itertools.product(rows_with_tokens, cols_with_tokens))
+        self.space_colors = {}
 
     @classmethod
     def from_stdscr(cls, stdscr, board, nlines=6, ncols=12, start_y=2, start_x=3):
@@ -481,17 +482,27 @@ class BoardWindow:
                 self.board[6], self.board[7], self.board[8], v=v
             ),
         )
+
+        for space, color_ix in self.space_colors.items():
+            y, x = self.token_yxs[space]
+            self.w.chgat(y, x, 1, curses.color_pair(color_ix))
+
         self.w.refresh()
 
-    def highlight_square(self, i):
+    def highlight_square(self, i, player_color_ix=None):
         y, x = self.token_yxs[i]
-        self.w.chgat(y, x, 1, curses.A_STANDOUT)
+        if player_color_ix:
+            self.w.chgat(y, x, 1, curses.color_pair(player_color_ix) | curses.A_STANDOUT)
+            self.space_colors[i] = player_color_ix
+        else:
+            self.w.chgat(y, x, 1, curses.A_STANDOUT)
 
     def highlight_winning_pattern(self, *ixs):
         spaces = self.board.find_winning_pattern()
         for s in spaces:
             y, x = self.token_yxs[s]
-            self.w.chgat(y, x, 1, curses.A_STANDOUT)
+            color_ix = self.space_colors[s]
+            self.w.chgat(y, x, 1, curses.color_pair(color_ix) | curses.A_STANDOUT)
 
 def configure_curses():
     if curses.has_colors():
