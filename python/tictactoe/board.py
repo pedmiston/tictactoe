@@ -73,7 +73,7 @@ class Board:
             return token
 
     def __setitem__(self, key, token):
-        """Places a token on the board.
+        """Place a token on the board.
 
         >>> board[4] = "X"  # attempts to place token "X" in space 4
         """

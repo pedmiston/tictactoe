@@ -26,13 +26,13 @@ class Screen:
         self.s.addstr(1, 0, description)
 
     def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False, show_help_text=False):
-        """Get a key press from the user.
+        """Ask for a key press from the user.
 
         Args:
             prompt: The text to display describing the accepted key presses.
             keys: A list of keys to accept. If keys is None, accept any key.
             yx: A tuple of (y, x) screen coordinates of where to echo the key press.
-                If not provided, the cursor position is used.
+                If not provided, the current cursor position is used.
             default: A key to use as default. If a default key is provided and
                 ENTER is pressed, the default key will be returned.
             highlight: Whether to highlight the cell at the yx position.
@@ -71,12 +71,13 @@ class Screen:
         self.s.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
         return key
 
-    def draw_choices(self, choices, highlight=None, start_y=None):
+    def draw_choices(self, choices, highlight_key=None, higlight_line=None, start_y=None):
         """Draw response choices.
 
         Args:
             choices: dict of keyboard keys to response labels.
-            highlight: keyboard key of choice to highlight as the default key. Optional.
+            highlight_key: keyboard key of choice to highlight as the default key. Optional.
+            highlight_line: keyboard key of choice to highlight after it has been selected. Optional.
             start_y: row to start drawing response choices. If not provided,
                 one row below the cursor position is used.
         """
@@ -86,8 +87,10 @@ class Screen:
         for i, (key, label) in enumerate(choices.items()):
             row = start_y + i
             self.s.addstr(row, 0, f"({key}) {label}")
-            if key == highlight:
+            if key == highlight_key:
                 self.s.chgat(row, 0, 3, curses.A_STANDOUT)
+            if key == highlight_line:
+                self.s.chgat(row, 0, len(choices[key]), curses.A_STANDOUT)
 
     def draw_prompt(self, msg):
         self.s.move(self.prompt_y, 0)
@@ -99,13 +102,12 @@ class Screen:
         self.s.move(self.error_y, 0)
         self.s.deleteln()
         self.s.insertln()
-        if msg is None:
-            return
-        c = (
-            curses.color_pair(1) | curses.A_STANDOUT
-        )  # bitwise combine color with standout
-        self.s.addstr(f"!", c)
-        self.s.addstr(f" {msg}", curses.color_pair(1))
+        if msg is not None:
+            c = (
+                curses.color_pair(1) | curses.A_STANDOUT
+            )  # combine color with standout effects with bitwise "or"
+            self.s.addstr(f"!", c)
+            self.s.addstr(f" {msg}", curses.color_pair(1))
 
 
 class WelcomeScreen(Screen):
