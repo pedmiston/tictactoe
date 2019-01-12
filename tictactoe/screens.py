@@ -75,7 +75,7 @@ class Screen:
         self.s.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
         return key
 
-    def draw_choices(self, choices, highlight_key=None, highlight_line=None, start_y=None):
+    def draw_choices(self, choices, highlight_key=None, highlight_line=None, start_y=None, choice_colors=None):
         """Draw response choices.
 
         Args:
@@ -84,18 +84,29 @@ class Screen:
             highlight_line: keyboard key of line to highlight, e.g., after it has been selected. Optional.
             start_y: row to start drawing response choices. If not provided,
                 one row below the cursor position is used.
+            choice_colors: dict of choice keys to curses color pair ixs. Optional.
         """
         if start_y is None:
             start_y = self.s.getyx()[0] + 1
 
         for i, (key, label) in enumerate(choices.items()):
             row = start_y + i
-            self.s.addstr(row, 0, f"({key}) {label}")
+            if choice_colors and key in choice_colors:
+                self.s.addstr(row, 0, f"({key}) ")
+                self.s.addstr(f"{label}", curses.color_pair(choice_colors[key]))
+            else:
+                self.s.addstr(row, 0, f"({key}) {label}")
             if key == highlight_key:
-                self.s.chgat(row, 0, 3, curses.A_STANDOUT)
+                if choice_colors and key in choice_colors:
+                    self.s.chgat(row, 0, 3, curses.color_pair(choice_colors[key]) | curses.A_STANDOUT)
+                else:
+                    self.s.chgat(row, 0, 3, curses.A_STANDOUT)
             if key == highlight_line:
                 end_x = 4 + len(choices[key])
-                self.s.chgat(row, 0, end_x, curses.A_STANDOUT)
+                if choice_colors and key in choice_colors:
+                    self.s.chgat(row, 0, end_x, curses.color_pair(choice_colors[key]) | curses.A_STANDOUT)
+                else:
+                    self.s.chgat(row, 0, end_x, curses.A_STANDOUT)
 
     def draw_prompt(self, msg):
         self.s.move(self.prompt_y, 0)
@@ -167,11 +178,11 @@ class TokenScreen(Screen):
         self.s.clear()
         self.draw_title("Pick your tokens!")
 
-        self.s.addstr(2, 0, f"{self.player1}: ")
+        self.s.addstr(2, 0, f"{self.player1}: ", curses.color_pair(self.player1.color_ix))
         self.player1_token_yx = self.s.getyx()
         self.s.addstr(self.player1_token_yx[0], self.player1_token_yx[1], self.player1.token, curses.color_pair(self.player1.color_ix))
 
-        self.s.addstr(3, 0, f"{self.player2}: ")
+        self.s.addstr(3, 0, f"{self.player2}: ", curses.color_pair(self.player2.color_ix))
         self.player2_token_yx = self.s.getyx()
         self.s.addstr(self.player2_token_yx[0], self.player2_token_yx[1], self.player2.token, curses.color_pair(self.player2.color_ix))
 
@@ -278,10 +289,12 @@ class OrderScreen(Screen):
         self.choices["1"] = self.choices["1"].format(player1=self.player1)
         self.choices["2"] = self.choices["2"].format(player2=self.player2)
 
+        self.choice_colors = {"1": self.player1.color_ix, "2": self.player2.color_ix}
+
     def draw(self):
         self.s.clear()
         self.draw_title("Who goes first?")
-        self.draw_choices(self.choices, highlight_key="1", start_y=2)
+        self.draw_choices(self.choices, highlight_key="1", start_y=2, choice_colors=self.choice_colors)
         self.s.refresh()
         self.prompt_y = self.s.getyx()[0] + 2
 
@@ -302,7 +315,7 @@ class OrderScreen(Screen):
         else:
             raise TicTacToeError()
 
-        self.draw_choices(self.choices, highlight_line=key, start_y=2)
+        self.draw_choices(self.choices, highlight_line=key, start_y=2, choice_colors=self.choice_colors)
         self.s.refresh()
         time.sleep(self.choice_delay)
 
@@ -347,7 +360,7 @@ class PlayScreen(Screen):
         else:
             self.board_window.highlight_winning_pattern()
             self.board_window.w.refresh()
-            self.s.addstr(f"{winning_player} wins!", curses.A_STANDOUT)
+            self.s.addstr(f"{winning_player} wins!", curses.color_pair(winning_player.color_ix) | curses.A_STANDOUT)
             logger.info(f"{winning_player} wins")
 
         self.prompt_y += 1
@@ -356,7 +369,7 @@ class PlayScreen(Screen):
 
     def move_player(self, player):
         self.s.clear()
-        self.s.addstr(0, 0, f"{player}'s turn")
+        self.s.addstr(0, 0, f"{player}'s turn", curses.color_pair(player.color_ix))
         self.board_window.draw()
         if isinstance(player, players.Human):
             move = self.get_human_move(player)
@@ -379,9 +392,9 @@ class PlayScreen(Screen):
                 raise exceptions.PlayerQuitException()
             try:
                 self.board[key] = human_player.token
-            except SpotAlreadySelectedError:
+            except exceptions.SpotAlreadySelectedError:
                 error_message = "You've already placed a token on that square!"
-            except SpotTakenByOpponentError:
+            except exceptions.SpotTakenByOpponentError:
                 error_message = "Your opponent has already claimed that square."
             else:
                 logger.info(f"{human_player} placed a token on {key}")
@@ -483,7 +496,7 @@ class BoardWindow:
 def configure_curses():
     if curses.has_colors():
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
-        curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
     curses.curs_set(0)  # make cursor invisible
 
