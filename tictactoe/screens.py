@@ -71,13 +71,13 @@ class Screen:
         self.s.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
         return key
 
-    def draw_choices(self, choices, highlight_key=None, higlight_line=None, start_y=None):
+    def draw_choices(self, choices, highlight_key=None, highlight_line=None, start_y=None):
         """Draw response choices.
 
         Args:
             choices: dict of keyboard keys to response labels.
             highlight_key: keyboard key of choice to highlight as the default key. Optional.
-            highlight_line: keyboard key of choice to highlight after it has been selected. Optional.
+            highlight_line: keyboard key of line to highlight, e.g., after it has been selected. Optional.
             start_y: row to start drawing response choices. If not provided,
                 one row below the cursor position is used.
         """
@@ -123,7 +123,7 @@ class WelcomeScreen(Screen):
         self.s.clear()
         self.draw_title("Let's play Tic Tac Toe!")
         self.draw_description("Which type of game would you like to play?")
-        self.draw_choices(self.game_types, highlight="1", start_y=3)
+        self.draw_choices(self.game_types, highlight_key="1", start_y=3)
         self.s.refresh()
 
         # set prompt 2 lines below choices
@@ -144,7 +144,7 @@ class WelcomeScreen(Screen):
             )
 
         # highlight selected game type
-        self.draw_choices(self.game_types, highlight=key, start_y=3)
+        self.draw_choices(self.game_types, highlight_line=key, start_y=3)
         time.sleep(self.choice_delay)
 
         return self.game_types[key]
@@ -226,7 +226,7 @@ class DifficultyScreen(Screen):
 
     def draw(self):
         self.s.clear()
-        self.draw_choices(self.difficulties, highlight="1", start_y=2)
+        self.draw_choices(self.difficulties, highlight_key="1", start_y=2)
         self.s.refresh()
 
         # set prompt 2 lines below choices
@@ -236,7 +236,7 @@ class DifficultyScreen(Screen):
         if isinstance(self.player1, players.Computer):
             self.get_difficulty(self.player1)
 
-        self.draw_choices(self.difficulties, highlight="1", start_y=2)
+        self.draw_choices(self.difficulties, highlight_key="1", start_y=2)
         if isinstance(self.player2, players.Computer):
             self.get_difficulty(self.player2)
 
@@ -249,7 +249,7 @@ class DifficultyScreen(Screen):
         prompt = f"Enter [1-3]: "
         key = self.get_key(prompt=prompt, keys=keys, default=keys[0], highlight=True)
 
-        self.draw_choices(self.difficulties, highlight=key, start_y=2)
+        self.draw_choices(self.difficulties, highlight_line=key, start_y=2)
         self.s.refresh()
         time.sleep(self.choice_delay)
 
@@ -275,7 +275,7 @@ class OrderScreen(Screen):
     def draw(self):
         self.s.clear()
         self.draw_title("Who goes first?")
-        self.draw_choices(self.choices, highlight="1", start_y=2)
+        self.draw_choices(self.choices, highlight_key="1", start_y=2)
         self.s.refresh()
         self.prompt_y = self.s.getyx()[0] + 2
 
@@ -296,7 +296,7 @@ class OrderScreen(Screen):
         else:
             raise TicTacToeError()
 
-        self.draw_choices(self.choices, highlight=key, start_y=2)
+        self.draw_choices(self.choices, highlight_line=key, start_y=2)
         self.s.refresh()
         time.sleep(self.choice_delay)
 
