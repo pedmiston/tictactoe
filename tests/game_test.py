@@ -117,7 +117,7 @@ def test_switch_order(stdscr, logging_game):
     assert "Player 2 is going first" in logging_game.read_log()
 
 
-@pytest.mark.parametrize("seed1,seed2", zip(range(1,10), range(10,1,-1)))
+@pytest.mark.parametrize("seed1,seed2", zip(range(1,10), range(11,20)))
 def test_hard_ai_always_ties(stdscr, logging_game, seed1, seed2):
     app.create_players_from_game_type = Mock()
     app.create_players_from_game_type.return_value = (

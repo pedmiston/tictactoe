@@ -201,7 +201,7 @@ class TokenScreen(Screen):
 
             try:
                 player.token = key
-            except ImproperTokenError:
+            except exceptions.ImproperTokenError:
                 self.draw_error_message("You can't use that as a token.")
             else:
                 # "echo" the capitalized token to the screen

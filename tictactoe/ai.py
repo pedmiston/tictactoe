@@ -1,3 +1,5 @@
+"""AI is implemented at three difficulties: easy, medium, or hard."""
+
 def easy(computer, board):
     """Choose one of the available spaces at random."""
     return computer.prng.choice(board.available())
@@ -13,7 +15,7 @@ def medium(computer, board):
     if blocking_move != -1:
         return blocking_move
 
-    if board[4] == "4":
+    if board[4] == "4":  # center square is open
         return 4
     else:
         return computer.prng.choice(board.available())
@@ -45,6 +47,7 @@ def hard(computer, board):
 def optimal_first_turn_strategy(computer, board, turn):
     assert not turn % 2, f"turn {turn} is not a first turn strategy"
     if turn == 0:
+        # select a corner at random
         return computer.prng.choice(board.available_corners())
     elif turn == 2:
         if board[4] != "4":
@@ -64,8 +67,13 @@ def optimal_first_turn_strategy(computer, board, turn):
 def optimal_response_strategy(computer, board, turn):
     assert turn % 2, f"turn {turn} is not a response strategy"
     if turn == 1:
-        if board[4] == "4":
+        if board[4] == "4":  # take the center if it's open
             return 4
         else:
             return computer.prng.choice(board.available_corners())
+    elif turn == 3:
+        opponent_move_1, opponent_move_2 = board.moves[0].space, board.moves[2].space
+        if opponent_move_1 in board.corners and opponent_move_2 in board.corners:
+            return computer.prng.choice(board.available_middles())
+
     return computer.prng.choice(board.available())

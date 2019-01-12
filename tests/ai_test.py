@@ -68,3 +68,17 @@ def test_hard_computer_blocks_if_cant_win(hard_computer):
         board[b] = "O"
         move = hard_computer.move(board)
         assert move == c
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_hard_computer_response_strategy_picks_mid_spot_turn_three(seed):
+    hard_computer = Computer(difficulty="Hard", seed=seed)
+    hard_computer.token = "X"
+
+    board = Board()
+    board[2] = "O"
+    board[4] = "X"
+    board[6] = "O"
+
+    move = hard_computer.move(board)
+    assert move in board.middles

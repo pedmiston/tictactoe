@@ -117,6 +117,9 @@ class Board:
     def available_corners(self):
         return [s for s in self.corners if self.b[s] not in self.tokens]
 
+    def available_middles(self):
+        return [s for s in self.middles if self.b[s] not in self.tokens]
+
     def find_adjacent_corner(self, token):
         for s1, s2, s3 in self.outer_patterns:
             if self.b[s1] == token and self.b[s2] == str(s2):
