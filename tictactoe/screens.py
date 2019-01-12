@@ -501,8 +501,11 @@ class BoardWindow:
         spaces = self.board.find_winning_pattern()
         for s in spaces:
             y, x = self.token_yxs[s]
-            color_ix = self.space_colors[s]
-            self.w.chgat(y, x, 1, curses.color_pair(color_ix) | curses.A_STANDOUT)
+            if self.space_colors and s in self.space_colors:
+                color_ix = self.space_colors[s]
+                self.w.chgat(y, x, 1, curses.color_pair(color_ix) | curses.A_STANDOUT)
+            else:
+                self.w.chgat(y, x, 1, curses.A_STANDOUT)
 
 def configure_curses():
     if curses.has_colors():
