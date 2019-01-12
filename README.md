@@ -1,4 +1,4 @@
-Play the game with `python -m tictactoe`
+Play the game with `python game.py`
 
 ## Development
 

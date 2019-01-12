@@ -13,7 +13,7 @@ class Screen:
     """Parent class for all TicTacToe screens."""
 
     prompt_y, error_y = 1, 2  # subclasses should overwrite these
-    choice_delay = 0.28
+    choice_delay = 0.5
 
     def __init__(self, stdscr):
         """Initialize the screen as a wrapper around a curses window."""
@@ -25,7 +25,7 @@ class Screen:
     def draw_description(self, description):
         self.s.addstr(1, 0, description)
 
-    def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False, show_help_text=False):
+    def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False, show_help_text=False, highlight_color_ix=None):
         """Ask for a key press from the user.
 
         Args:
@@ -37,6 +37,7 @@ class Screen:
                 ENTER is pressed, the default key will be returned.
             highlight: Whether to highlight the cell at the yx position.
             show_help_text: Whether to show help text about the Enter key.
+            highlight_color_ix: Whether to highlight the key in a curses color pair. Optional.
 
         Returns:
             key: A string of the key pressed by the user.
@@ -57,7 +58,10 @@ class Screen:
 
 
         if highlight:
-            self.s.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
+            if highlight_color_ix:
+                self.s.chgat(yx[0], yx[1], 1, curses.color_pair(highlight_color_ix) | curses.A_STANDOUT)
+            else:
+                self.s.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
         self.s.refresh()
         while True:
             key = self.s.getkey()
@@ -90,7 +94,8 @@ class Screen:
             if key == highlight_key:
                 self.s.chgat(row, 0, 3, curses.A_STANDOUT)
             if key == highlight_line:
-                self.s.chgat(row, 0, len(choices[key]), curses.A_STANDOUT)
+                end_x = 4 + len(choices[key])
+                self.s.chgat(row, 0, end_x, curses.A_STANDOUT)
 
     def draw_prompt(self, msg):
         self.s.move(self.prompt_y, 0)
@@ -145,6 +150,7 @@ class WelcomeScreen(Screen):
 
         # highlight selected game type
         self.draw_choices(self.game_types, highlight_line=key, start_y=3)
+        self.s.refresh()
         time.sleep(self.choice_delay)
 
         return self.game_types[key]
@@ -163,11 +169,11 @@ class TokenScreen(Screen):
 
         self.s.addstr(2, 0, f"{self.player1}: ")
         self.player1_token_yx = self.s.getyx()
-        self.s.addstr(self.player1.token)
+        self.s.addstr(self.player1_token_yx[0], self.player1_token_yx[1], self.player1.token, curses.color_pair(self.player1.color_ix))
 
         self.s.addstr(3, 0, f"{self.player2}: ")
         self.player2_token_yx = self.s.getyx()
-        self.s.addstr(self.player2.token)
+        self.s.addstr(self.player2_token_yx[0], self.player2_token_yx[1], self.player2.token, curses.color_pair(self.player2.color_ix))
 
         self.s.refresh()
 
@@ -191,7 +197,7 @@ class TokenScreen(Screen):
         while True:
             prompt = f"Enter a letter [A-Z] to use as a token."
             key = self.get_key(
-                prompt=prompt, yx=token_yx, default=player.token, highlight=True
+                prompt=prompt, yx=token_yx, default=player.token, highlight=True, highlight_color_ix=player.color_ix
             )
             if opponent_token is not None and key.upper() == opponent_token:
                 self.draw_error_message(
@@ -205,7 +211,7 @@ class TokenScreen(Screen):
                 self.draw_error_message("You can't use that as a token.")
             else:
                 # "echo" the capitalized token to the screen
-                self.s.addstr(token_yx[0], token_yx[1], player.token)
+                self.s.addstr(token_yx[0], token_yx[1], player.token, curses.color_pair(player.color_ix))
                 break
 
         self.draw_error_message(msg=None)  # clear error message
@@ -243,7 +249,7 @@ class DifficultyScreen(Screen):
     def get_difficulty(self, player):
         self.draw_title(f"Set a difficulty for ")
         y, x = self.s.getyx()
-        self.s.addstr(y, x, str(player), curses.color_pair(3) | curses.A_STANDOUT)
+        self.s.addstr(y, x, str(player), curses.color_pair(player.color_ix) | curses.A_STANDOUT)
 
         keys = ["1", "2", "3"]
         prompt = f"Enter [1-3]: "
@@ -402,6 +408,9 @@ class EndScreen(Screen):
     def __init__(self, stdscr, board):
         super().__init__(stdscr)
         self.board_window = BoardWindow.from_stdscr(stdscr, board)
+
+        # Set prompt below board
+        self.prompt_y = 8
 
     def draw(self):
         self.s.clear()

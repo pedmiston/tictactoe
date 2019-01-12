@@ -45,6 +45,10 @@ class Game:
         logger.info(f"Setting up a {game_type} game")
         player1, player2 = create_players_from_game_type(game_type)
 
+        # Set player colors
+        player1.color_ix = 2
+        player2.color_ix = 3
+
         # Set player tokens
         player1.token = "X"
         player2.token = "O"
