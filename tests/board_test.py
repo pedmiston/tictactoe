@@ -1,5 +1,5 @@
 import pytest
-from tictactoe import exceptions
+from tictactoe import exceptions, patterns
 from tictactoe.board import Board, Move
 
 
@@ -71,7 +71,7 @@ def test_board_finds_blocking_move(xo_board):
 
 
 def test_board_detects_all_winning_patterns():
-    for s1, s2, s3 in Board.winning_patterns:
+    for s1, s2, s3 in patterns.winning_patterns:
         xo_board = Board(tokens=["X", "O"])
         xo_board[s1] = "X"
         xo_board[s2] = "X"

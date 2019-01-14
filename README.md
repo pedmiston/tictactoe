@@ -4,8 +4,8 @@ Play the game with `python3 game.py`
 
 ## Requirements
 
-This is the coding challenge I was given when I applied to 8th Light at the end
-of last summer. The challenge required me to build a Tic Tac Toe command line
+This is the coding challenge I was given when I applied to 8th Light in
+August, 2018. The challenge required me to build a Tic Tac Toe command line
 app that met the following requirements:
 
 - The game does not gracefully handle bad user input.

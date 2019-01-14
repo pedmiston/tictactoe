@@ -1,6 +1,6 @@
 import random
 import pytest
-from tictactoe import ai
+from tictactoe import ai, patterns
 from tictactoe.players import Computer
 from tictactoe.board import Board
 
@@ -22,7 +22,7 @@ def test_computer_makes_repeatable_guesses():
 def test_hard_computer_chooses_corner_as_first_move(hard_computer):
     board = Board()
     move = hard_computer.move(board)
-    assert move in board.corners
+    assert move in patterns.corners
 
 
 def test_hard_computer_chooses_adjacent_corner_as_second_move(hard_computer):
@@ -47,7 +47,7 @@ def test_hard_computer_chooses_opposite_corner_as_second_move(hard_computer):
 
 
 def test_hard_computer_wins_if_able(hard_computer):
-    for args in Board.winning_patterns:
+    for args in patterns.winning_patterns:
         args = list(args)
         random.shuffle(args)
         a, b, c = args
@@ -59,7 +59,7 @@ def test_hard_computer_wins_if_able(hard_computer):
 
 
 def test_hard_computer_blocks_if_cant_win(hard_computer):
-    for args in Board.winning_patterns:
+    for args in patterns.winning_patterns:
         args = list(args)
         random.shuffle(args)
         a, b, c = args
@@ -81,4 +81,4 @@ def test_hard_computer_response_strategy_picks_mid_spot_turn_three(seed):
     board[6] = "O"
 
     move = hard_computer.move(board)
-    assert move in board.middles
+    assert move in patterns.middles

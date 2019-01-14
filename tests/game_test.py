@@ -37,6 +37,7 @@ def logging_game(tmpdir):
     # patch on a method for reading the log
     def read_log():
         return tmp_log.read()
+
     g.read_log = read_log
 
     return g
@@ -59,7 +60,7 @@ def test_play_human_v_human_game(stdscr, logging_game):
         "1",  # Player 1 turn
         "4",  # Player 2 turn
         "2",  # Player 1 turn
-        "\n", # Player 1 wins screen
+        "\n",  # Player 1 wins screen
         "q",  # Any key to quit
     ]
     logging_game(stdscr)
@@ -82,7 +83,7 @@ def test_play_tie_game(stdscr, logging_game):
         "7",  # Player 1 turn
         "6",  # Player 2 turn
         "8",  # Player 1 turn
-        "\n", # Tie screen
+        "\n",  # Tie screen
         "q",  # Any key to quit
     ]
     logging_game(stdscr)
@@ -117,7 +118,7 @@ def test_switch_order(stdscr, logging_game):
     assert "Player 2 is going first" in logging_game.read_log()
 
 
-@pytest.mark.parametrize("seed1,seed2", zip(range(1,10), range(11,20)))
+@pytest.mark.parametrize("seed1,seed2", zip(range(1, 10), range(11, 20)))
 def test_hard_ai_always_ties(stdscr, logging_game, seed1, seed2):
     app.create_players_from_game_type = Mock()
     app.create_players_from_game_type.return_value = (
@@ -133,7 +134,7 @@ def test_hard_ai_always_ties(stdscr, logging_game, seed1, seed2):
         "3",  # Computer 2 difficulty: hard
         "1",  # Computer 1 goes first
         # Play the game
-        "\n", # Tie screen
+        "\n",  # Tie screen
         "q",  # Any key to quit
     ]
     logging_game(stdscr)

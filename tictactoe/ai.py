@@ -1,4 +1,6 @@
 """AI is implemented at three difficulties: easy, medium, or hard."""
+from tictactoe import patterns
+
 
 def easy(computer, board):
     """Choose one of the available spaces at random."""
@@ -73,7 +75,7 @@ def optimal_response_strategy(computer, board, turn):
             return computer.prng.choice(board.available_corners())
     elif turn == 3:
         opponent_move_1, opponent_move_2 = board.moves[0].space, board.moves[2].space
-        if opponent_move_1 in board.corners and opponent_move_2 in board.corners:
+        if opponent_move_1 in patterns.corners and opponent_move_2 in patterns.corners:
             return computer.prng.choice(board.available_middles())
 
     return computer.prng.choice(board.available())

@@ -31,10 +31,10 @@ class Game:
             >>> game = Game()
             >>> curses.wrapper(game)
         """
+        logger.info("Starting a new game")
         screens.configure_curses()
 
         # Welcome the player and ask for game type
-        logger.info("Starting a new game")
         welcome_screen = screens.WelcomeScreen(stdscr)
         welcome_screen.draw()
         try:
@@ -52,6 +52,7 @@ class Game:
         # Set player tokens
         player1.token = "X"
         player2.token = "O"
+
         token_screen = screens.TokenScreen(stdscr, player1, player2)
         token_screen.draw()
         token_screen.update_player_tokens()
@@ -83,10 +84,12 @@ class Game:
             return self.quit()
 
         # Ask the player if they want to play again
-        end_screen = screens.EndScreen(stdscr, board, board_window=play_screen.board_window)
+        end_screen = screens.EndScreen(
+            stdscr, board, board_window=play_screen.board_window
+        )
         play_again = end_screen.ask_play_again()
         if play_again:
-            self(stdscr)  # smells!
+            self(stdscr)  # ???
         else:
             logger.info("Game over")
 
@@ -112,9 +115,13 @@ def create_players_from_game_type(game_type):
     elif game_type == "Human v Human":
         player1, player2 = players.Human("Player 1"), players.Human("Player 2")
     elif game_type == "Computer v Computer":
-        player1, player2 = players.Computer("Computer 1"), players.Computer("Computer 2")
+        player1, player2 = (
+            players.Computer("Computer 1"),
+            players.Computer("Computer 2"),
+        )
     else:
         raise TicTacToeError(f"unknown game type '{game_type}'")
+
     return player1, player2
 
 

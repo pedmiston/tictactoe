@@ -25,7 +25,16 @@ class Screen:
     def draw_description(self, description):
         self.s.addstr(1, 0, description)
 
-    def get_key(self, prompt=None, keys=None, yx=None, default=None, highlight=False, show_help_text=False, highlight_color_ix=None):
+    def get_key(
+        self,
+        prompt=None,
+        keys=None,
+        yx=None,
+        default=None,
+        highlight=False,
+        show_help_text=False,
+        highlight_color_ix=None,
+    ):
         """Ask for a key press from the user.
 
         Args:
@@ -56,10 +65,14 @@ class Screen:
                     curses.color_pair(3),
                 )
 
-
         if highlight:
             if highlight_color_ix:
-                self.s.chgat(yx[0], yx[1], 1, curses.color_pair(highlight_color_ix) | curses.A_STANDOUT)
+                self.s.chgat(
+                    yx[0],
+                    yx[1],
+                    1,
+                    curses.color_pair(highlight_color_ix) | curses.A_STANDOUT,
+                )
             else:
                 self.s.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
         self.s.refresh()
@@ -75,7 +88,14 @@ class Screen:
         self.s.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
         return key
 
-    def draw_choices(self, choices, highlight_key=None, highlight_line=None, start_y=None, choice_colors=None):
+    def draw_choices(
+        self,
+        choices,
+        highlight_key=None,
+        highlight_line=None,
+        start_y=None,
+        choice_colors=None,
+    ):
         """Draw response choices.
 
         Args:
@@ -98,13 +118,23 @@ class Screen:
                 self.s.addstr(row, 0, f"({key}) {label}")
             if key == highlight_key:
                 if choice_colors and key in choice_colors:
-                    self.s.chgat(row, 0, 3, curses.color_pair(choice_colors[key]) | curses.A_STANDOUT)
+                    self.s.chgat(
+                        row,
+                        0,
+                        3,
+                        curses.color_pair(choice_colors[key]) | curses.A_STANDOUT,
+                    )
                 else:
                     self.s.chgat(row, 0, 3, curses.A_STANDOUT)
             if key == highlight_line:
                 end_x = 4 + len(choices[key])
                 if choice_colors and key in choice_colors:
-                    self.s.chgat(row, 0, end_x, curses.color_pair(choice_colors[key]) | curses.A_STANDOUT)
+                    self.s.chgat(
+                        row,
+                        0,
+                        end_x,
+                        curses.color_pair(choice_colors[key]) | curses.A_STANDOUT,
+                    )
                 else:
                     self.s.chgat(row, 0, end_x, curses.A_STANDOUT)
 
@@ -150,7 +180,11 @@ class WelcomeScreen(Screen):
         choices = ["1", "2", "3", "q"]
         prompt = "Enter [1-3] or Q to quit: "
         key = self.get_key(
-            prompt=prompt, keys=choices, default=choices[0], highlight=True, show_help_text=True
+            prompt=prompt,
+            keys=choices,
+            default=choices[0],
+            highlight=True,
+            show_help_text=True,
         )
         if key == "q":
             raise exceptions.PlayerQuitException()
@@ -178,13 +212,27 @@ class TokenScreen(Screen):
         self.s.clear()
         self.draw_title("Pick your tokens!")
 
-        self.s.addstr(2, 0, f"{self.player1}: ", curses.color_pair(self.player1.color_ix))
+        self.s.addstr(
+            2, 0, f"{self.player1}: ", curses.color_pair(self.player1.color_ix)
+        )
         self.player1_token_yx = self.s.getyx()
-        self.s.addstr(self.player1_token_yx[0], self.player1_token_yx[1], self.player1.token, curses.color_pair(self.player1.color_ix))
+        self.s.addstr(
+            self.player1_token_yx[0],
+            self.player1_token_yx[1],
+            self.player1.token,
+            curses.color_pair(self.player1.color_ix),
+        )
 
-        self.s.addstr(3, 0, f"{self.player2}: ", curses.color_pair(self.player2.color_ix))
+        self.s.addstr(
+            3, 0, f"{self.player2}: ", curses.color_pair(self.player2.color_ix)
+        )
         self.player2_token_yx = self.s.getyx()
-        self.s.addstr(self.player2_token_yx[0], self.player2_token_yx[1], self.player2.token, curses.color_pair(self.player2.color_ix))
+        self.s.addstr(
+            self.player2_token_yx[0],
+            self.player2_token_yx[1],
+            self.player2.token,
+            curses.color_pair(self.player2.color_ix),
+        )
 
         self.s.refresh()
 
@@ -208,7 +256,11 @@ class TokenScreen(Screen):
         while True:
             prompt = f"Enter a letter [A-Z] to use as a token."
             key = self.get_key(
-                prompt=prompt, yx=token_yx, default=player.token, highlight=True, highlight_color_ix=player.color_ix
+                prompt=prompt,
+                yx=token_yx,
+                default=player.token,
+                highlight=True,
+                highlight_color_ix=player.color_ix,
             )
             if opponent_token is not None and key.upper() == opponent_token:
                 self.draw_error_message(
@@ -222,7 +274,12 @@ class TokenScreen(Screen):
                 self.draw_error_message("You can't use that as a token.")
             else:
                 # "echo" the capitalized token to the screen
-                self.s.addstr(token_yx[0], token_yx[1], player.token, curses.color_pair(player.color_ix))
+                self.s.addstr(
+                    token_yx[0],
+                    token_yx[1],
+                    player.token,
+                    curses.color_pair(player.color_ix),
+                )
                 break
 
         self.draw_error_message(msg=None)  # clear error message
@@ -238,7 +295,8 @@ class DifficultyScreen(Screen):
         self.player1, self.player2 = player1, player2
         # Set flag to skip if neither player is a Computer
         self.skip = not (
-            isinstance(self.player1, players.Computer) or isinstance(self.player2, players.Computer)
+            isinstance(self.player1, players.Computer)
+            or isinstance(self.player2, players.Computer)
         )
 
     def draw(self):
@@ -294,7 +352,9 @@ class OrderScreen(Screen):
     def draw(self):
         self.s.clear()
         self.draw_title("Who goes first?")
-        self.draw_choices(self.choices, highlight_key="1", start_y=2, choice_colors=self.choice_colors)
+        self.draw_choices(
+            self.choices, highlight_key="1", start_y=2, choice_colors=self.choice_colors
+        )
         self.s.refresh()
         self.prompt_y = self.s.getyx()[0] + 2
 
@@ -315,7 +375,12 @@ class OrderScreen(Screen):
         else:
             raise TicTacToeError()
 
-        self.draw_choices(self.choices, highlight_line=key, start_y=2, choice_colors=self.choice_colors)
+        self.draw_choices(
+            self.choices,
+            highlight_line=key,
+            start_y=2,
+            choice_colors=self.choice_colors,
+        )
         self.s.refresh()
         time.sleep(self.choice_delay)
 
@@ -360,7 +425,10 @@ class PlayScreen(Screen):
         else:
             self.board_window.highlight_winning_pattern()
             self.board_window.w.refresh()
-            self.s.addstr(f"{winning_player} wins!", curses.color_pair(winning_player.color_ix) | curses.A_STANDOUT)
+            self.s.addstr(
+                f"{winning_player} wins!",
+                curses.color_pair(winning_player.color_ix) | curses.A_STANDOUT,
+            )
             logger.info(f"{winning_player} wins")
 
         self.prompt_y += 1
@@ -438,7 +506,7 @@ class EndScreen(Screen):
         self.board_window.w.refresh()
         prompt = "Press ENTER to play again or any other key to exit."
         key = self.get_key(prompt)
-        return (key == "\n")
+        return key == "\n"
 
 
 class BoardWindow:
@@ -459,30 +527,22 @@ class BoardWindow:
     def draw(self):
         v, h, p = "|", "=", "+"
         self.w.clear()
-        self.w.addstr(
-            0,
-            0,
-            " {0} {v} {1} {v} {2} ".format(
-                self.board[0], self.board[1], self.board[2], v=v
-            ),
-        )
-        self.w.addstr(1, 0, f"{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}")
-        self.w.addstr(
-            2,
-            0,
-            " {0} {v} {1} {v} {2} ".format(
-                self.board[3], self.board[4], self.board[5], v=v
-            ),
-        )
-        self.w.addstr(3, 0, f"{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}")
-        self.w.addstr(
-            4,
-            0,
-            " {0} {v} {1} {v} {2} ".format(
-                self.board[6], self.board[7], self.board[8], v=v
-            ),
-        )
 
+        # fmt: off
+        self.w.addstr(0, 0, " {0} {v} {1} {v} {2} ".format(
+            self.board[0], self.board[1], self.board[2], v=v
+        ))
+        self.w.addstr(1, 0, f"{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}")
+        self.w.addstr(2, 0, " {0} {v} {1} {v} {2} ".format(
+            self.board[3], self.board[4], self.board[5], v=v
+        ))
+        self.w.addstr(3, 0, f"{h}{h}{h}{p}{h}{h}{h}{p}{h}{h}{h}")
+        self.w.addstr(4, 0, " {0} {v} {1} {v} {2} ".format(
+            self.board[6], self.board[7], self.board[8], v=v
+        ))
+        # fmt: on
+
+        # update spaces taken by player tokens with correct colors
         for space, color_ix in self.space_colors.items():
             y, x = self.token_yxs[space]
             self.w.chgat(y, x, 1, curses.color_pair(color_ix))
@@ -492,7 +552,10 @@ class BoardWindow:
     def highlight_square(self, i, player_color_ix=None):
         y, x = self.token_yxs[i]
         if player_color_ix:
-            self.w.chgat(y, x, 1, curses.color_pair(player_color_ix) | curses.A_STANDOUT)
+            self.w.chgat(
+                y, x, 1, curses.color_pair(player_color_ix) | curses.A_STANDOUT
+            )
+            # store this space as this color for subsequent draws
             self.space_colors[i] = player_color_ix
         else:
             self.w.chgat(y, x, 1, curses.A_STANDOUT)
@@ -507,6 +570,7 @@ class BoardWindow:
             else:
                 self.w.chgat(y, x, 1, curses.A_STANDOUT)
 
+
 def configure_curses():
     if curses.has_colors():
         curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
@@ -516,4 +580,6 @@ def configure_curses():
 
 
 def game_has_computer_players(player1, player2):
-    return isinstance(player1, players.Computer) or isinstance(player2, players.Computer)
+    return isinstance(player1, players.Computer) or isinstance(
+        player2, players.Computer
+    )
