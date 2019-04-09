@@ -1,4 +1,24 @@
 """Patterns of winning spaces."""
+
+# I think hard-coding board positions like this is good in some ways and bad in others.
+# For the stated problem, this is much easier to read and understand than a more complicated
+# search-based AI. It's also probably more CPU efficient, although that's not a big concern
+# for this :)
+#
+# If we were building this as a maybe-slightly-overengineered Full Production System,
+# hard-coding these things might bite us later if requirements change. For example,
+# a new req comes in from the sales department that we have to support 4x4 tic tac toe.
+#
+# I'm *not* saying I would definitely change to something more general here. In fact, Maggie
+# can attest that I'm often advising people to write code that deals with the specific data that
+# they have in front of them, rather than building some more complicated general solution.
+# But, that's the kind of tradeoff we want to think about when building business software: what's
+# likely to change? What can we do in our code to be ready for that change when it comes? Not
+# anticipate the specific change, but build things in a way that is flexible when change
+# inevitably comes.
+#
+# I'm veering off into the weeds a bit, so we can pair up on some specific refactoring if you'd like!
+
 winning_patterns = [
     (0, 1, 2),
     (3, 4, 5),

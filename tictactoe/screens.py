@@ -6,17 +6,52 @@ import curses
 from tictactoe import board, players, exceptions
 
 
+# I started out going line by line through this file, but there's a lot
+# here, and I think this general note could cause enough change that I
+# want to say it before doing any deeper dives in the specifics:
+#
+# One thing that gets discussed a lot in system design is wrapping and isolating dependencies -
+# that is, making the number of parts of your own code that know anything about how
+# a dependency works as small as possible. Often what this looks like is a class which
+# provides some functions that don't do much besides forward calls onto a library.
+#
+# The reason for wrapping libraries like this is to reduce the cost of change. If
+# more of your business logic code only talks to other code you own, you reduce the number
+# of places that need to change when those dependencies change (or, for example, you want to
+# put a new UI on top of existing game logic).
+#
+# There's another benefit to wrapping, as well, which is that your other code becomes
+# more directly expressive. A method called, like, `screen.print_text_at_coords("hi there", (0, 5))`
+# is easier to read and understand than the way Curses wants you to say the same thing.
+#
+# This would be kind of a lengthy exercise, so I leave it to your discretion whether
+# you want to attempt it on this project or on a future one like Memory, but I think
+# it would be worthwhile to see how small you can get the number of classes which
+# have explicit knowledge of how Curses works. In this file, everyone is doing
+# curses-specific stuff like calling `addstr`. Can we get to a place where there's
+# basically a single class that knows how to draw things with Curses, and all of our
+# specific Screen classes just make use of that class and don't know anything specific
+# about Curses itself?
+#
+# As always, happy to discuss or pair in person!
+
+
 logger = logging.getLogger("game")
 
 
 class Screen:
     """Parent class for all TicTacToe screens."""
 
+    # Extremely minor quibble that I would never actually argue with someone about:
+    # I prefer one assignment per line, for the reason that, if these need to change or we have
+    # to add a new one, the diff will be easier to read in git and/or a pull request.
     prompt_y, error_y = 1, 2  # subclasses should overwrite these
     choice_delay = 0.5
 
     def __init__(self, stdscr):
         """Initialize the screen as a wrapper around a curses window."""
+        # I would spend a few extra characters here and call this `screen`, for the sake
+        # of readability.
         self.s = stdscr
 
     def draw_title(self, title):

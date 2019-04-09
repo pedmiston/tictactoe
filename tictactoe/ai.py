@@ -2,6 +2,9 @@
 from tictactoe import patterns
 
 
+# Related some of the other refactoring comments I've made,
+# I think it would be worthwhile to see how the system design changes
+# if this functionality moves into the Computer class.
 def easy(computer, board):
     """Choose one of the available spaces at random."""
     return computer.prng.choice(board.available())

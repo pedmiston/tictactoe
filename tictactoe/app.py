@@ -34,6 +34,7 @@ class Game:
         logger.info("Starting a new game")
         screens.configure_curses()
 
+        # Discussion topic: comments vs extract method vs neither
         # Welcome the player and ask for game type
         welcome_screen = screens.WelcomeScreen(stdscr)
         welcome_screen.draw()
@@ -57,6 +58,13 @@ class Game:
         token_screen.draw()
         token_screen.update_player_tokens()
 
+        # Possible UX change that would have code structure implications also:
+        # What if you create all of a player at one time: human/computer, token, and difficulty
+        # all for player 1, then all of those for player 2?
+        #
+        # The reason I think it might be interesting to explore that is it would make it
+        # easier to push some behavior into the Player classes.
+        #
         if game_has_computer_players(game_type):
             # Set computer player difficulties
             difficulty_screen = screens.DifficultyScreen(stdscr, player1, player2)
@@ -89,6 +97,10 @@ class Game:
         )
         play_again = end_screen.ask_play_again()
         if play_again:
+            # It might make sense to put this whole thing in one big Game Loop.
+            # I think that's how most Curses apps are structured as well: boot up, do
+            # whatever initial setup is needed, then enter an infinite loop that alternates
+            # between grabbing user input and doing the appropriate thing based on that.
             self(stdscr)  # ???
         else:
             logger.info("Game over")
@@ -110,6 +122,10 @@ def enable_logging(log_file):
 
 def create_players_from_game_type(game_type):
     """Create players 1 and 2 based on game type."""
+    # You mentioned enum above, and that would be a good change, I think.
+    # I'd also recommend changing the hard-coded strings to constants, so that they're only
+    # defined in one place. It's too easy to mistype a string if it's in multiple places,
+    # and hard to safely update if you decide you want to change it later.
     if game_type == "Human v Computer":
         player1, player2 = players.Human(), players.Computer()
     elif game_type == "Human v Human":

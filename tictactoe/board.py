@@ -50,6 +50,16 @@ class Board:
                 return s1, s2, s3
         return -1, -1, -1
 
+    # I alluded to this in a comment in app.py; I think it might be interesting to explore
+    # a refactoring where the Player class is responsible for providing moves, from user
+    # input when it's a Human, and from the AI when it's a Computer. That refactoring
+    # might also necessitate change in how input is gathered. I haven't thought through
+    # the whole thing, so there might be some messy bits with interacting with Curses,
+    # but it'd be worthwhile to explore.
+    #
+    # To inject some Object Oriented Design terminology here, these move-finding methods
+    # feel like violations of the Single Responsibility Principle.
+    #
     def find_winning_move(self, token):
         for (s1, s2), s3 in patterns.partial_patterns.items():
             if self.b[s1] == self.b[s2] == token and self.b[s3] not in self.tokens:
