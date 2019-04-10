@@ -63,10 +63,10 @@ class Board:
         return [int(token) for token in self.b if token not in self.tokens]
 
     def available_corners(self):
-        return [s for s in corners if self.b[s] not in self.tokens]
+        return [s for s in self.get_corners() if self.b[s] not in self.tokens]
 
     def available_middles(self):
-        return [s for s in middles if self.b[s] not in self.tokens]
+        return [s for s in self.get_middles() if self.b[s] not in self.tokens]
 
     def get_winning_patterns(self):
         winning_patterns = set(
@@ -111,12 +111,3 @@ class Board:
 
     def get_middles(self):
         return [1, 3, 5, 7]
-
-
-board = Board()
-winning_patterns = board.get_winning_patterns()
-partial_patterns = board.make_partial_patterns()
-outer_patterns = board.make_outer_patterns()
-diagonal_patterns = board.make_diagonal_patterns()
-corners = board.get_corners()
-middles = board.get_middles()

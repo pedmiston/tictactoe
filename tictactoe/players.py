@@ -1,7 +1,6 @@
 import string
 import random
 from tictactoe import exceptions
-from tictactoe import board as patterns  # !!!
 
 
 class Player:
@@ -43,7 +42,7 @@ class Computer(Player):
 
     def find_winning_move(self, board, token=None):
         token = token or self.token
-        for (s1, s2), s3 in patterns.partial_patterns.items():
+        for (s1, s2), s3 in board.make_partial_patterns().items():
             if board[s1] == board[s2] == token and board[s3] not in board.tokens:
                 return s3
         return -1
@@ -53,7 +52,7 @@ class Computer(Player):
         return self.find_winning_move(board, token=opponent_token)
 
     def find_adjacent_corner(self, board):
-        for s1, s2, s3 in patterns.outer_patterns:
+        for s1, s2, s3 in board.make_outer_patterns():
             if board[s1] == self.token and board[s2] == str(s2):
                 return s3
             if board[s3] == self.token and board[s2] == str(s2):
@@ -61,7 +60,7 @@ class Computer(Player):
         return -1
 
     def find_opposite_corner(self, board):
-        for s1, s2, s3 in patterns.diagonal_patterns:
+        for s1, s2, s3 in board.make_diagonal_patterns():
             if board[s1] == self.token:
                 return s3
             if board[s3] == self.token:
@@ -153,8 +152,8 @@ class HardComputer(Computer):
                 board.moves[2].space,
             )
             if (
-                opponent_move_1 in patterns.corners
-                and opponent_move_2 in patterns.corners
+                opponent_move_1 in board.get_corners()
+                and opponent_move_2 in board.get_corners()
             ):
                 return self.prng.choice(board.available_middles())
 
