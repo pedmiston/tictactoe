@@ -113,16 +113,13 @@ def enable_logging(log_file):
     logger.setLevel(logging.INFO)
 
 
-# TODO: Refactor game_type to be an enum type
-
-
 def create_players_from_game_type(game_type):
     """Create players 1 and 2 based on game type."""
-    if game_type == "Human v Computer":
+    if game_type == screens.GameType.human_v_computer:
         player1, player2 = players.Human(), players.Computer()
-    elif game_type == "Human v Human":
+    elif game_type == screens.GameType.human_v_human:
         player1, player2 = players.Human("Player 1"), players.Human("Player 2")
-    elif game_type == "Computer v Computer":
+    elif game_type == screens.GameType.computer_v_computer:
         player1, player2 = (
             players.Computer("Computer 1"),
             players.Computer("Computer 2"),
@@ -134,4 +131,4 @@ def create_players_from_game_type(game_type):
 
 
 def game_has_computer_players(game_type):
-    return game_type != "Human v Human"
+    return game_type != screens.GameType.human_v_human
