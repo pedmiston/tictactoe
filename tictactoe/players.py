@@ -40,6 +40,17 @@ class Computer(Player):
     def move(self, board):
         raise NotImplementedError()
 
+    def find_winning_move(self, board, token=None):
+        token = token or self.token
+        for (s1, s2), s3 in patterns.partial_patterns.items():
+            if board[s1] == board[s2] == token and board[s3] not in board.tokens:
+                return s3
+        return -1
+
+    def find_blocking_move(self, board):
+        opponent_token = (set(board.tokens) - set(self.token)).pop()
+        return self.find_winning_move(board, token=opponent_token)
+
 
 class EasyComputer(Computer):
     difficulty = "Easy"
@@ -54,11 +65,11 @@ class MediumComputer(Computer):
 
     def move(self, board):
         """Win or block if able, otherwise pick center or at random."""
-        winning_move = board.find_winning_move(self.token)
+        winning_move = self.find_winning_move(board)
         if winning_move != -1:
             return winning_move
 
-        blocking_move = board.find_blocking_move(self.token)
+        blocking_move = self.find_blocking_move(board)
         if blocking_move != -1:
             return blocking_move
 
@@ -74,12 +85,12 @@ class HardComputer(Computer):
     def move(self, board):
         """Optimally select positions on a board."""
         # If you can win, win.
-        winning_move = board.find_winning_move(self.token)
+        winning_move = self.find_winning_move(board)
         if winning_move != -1:
             return winning_move
 
         # If you need to block, block.
-        blocking_move = board.find_blocking_move(self.token)
+        blocking_move = self.find_blocking_move(board)
         if blocking_move != -1:
             return blocking_move
 

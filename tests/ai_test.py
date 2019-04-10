@@ -4,6 +4,35 @@ from tictactoe import patterns, players
 from tictactoe.board import Board
 
 
+def test_board_finds_winning_move(xo_board, x_computer):
+    xo_board[0] = "X"
+    xo_board[1] = "X"
+
+    assert x_computer.find_winning_move(xo_board) == 2
+
+
+def test_board_fails_to_find_incomplete_pattern(xo_board, x_computer):
+    xo_board[0] = "X"
+    xo_board[5] = "X"
+
+    assert x_computer.find_winning_move(xo_board) == -1
+
+
+def test_board_fails_to_find_occupied_winning_move(xo_board, x_computer):
+    xo_board[0] = "X"
+    xo_board[1] = "X"
+    xo_board[2] = "O"
+
+    assert x_computer.find_winning_move(xo_board) == -1
+
+
+def test_board_finds_blocking_move(xo_board, x_computer):
+    xo_board[0] = "O"
+    xo_board[1] = "O"
+
+    assert x_computer.find_blocking_move(xo_board) == 2
+
+
 @pytest.fixture
 def hard_computer():
     hard_computer = players.HardComputer(seed=243)
