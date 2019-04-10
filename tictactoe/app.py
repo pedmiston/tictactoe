@@ -53,13 +53,17 @@ class Game:
         player1.token = "X"
         player2.token = "O"
 
-        token_screen = screens.TokenScreen(screens.CursesWindow(stdscr), player1, player2)
+        token_screen = screens.TokenScreen(
+            screens.CursesWindow(stdscr), player1, player2
+        )
         token_screen.draw()
         token_screen.update_player_tokens()
 
         if game_has_computer_players(game_type):
             # Set computer player difficulties
-            difficulty_screen = screens.DifficultyScreen(screens.CursesWindow(stdscr), player1, player2)
+            difficulty_screen = screens.DifficultyScreen(
+                screens.CursesWindow(stdscr), player1, player2
+            )
             difficulty_screen.draw()
             try:
                 difficulty_screen.update_computer_difficulties()
@@ -67,7 +71,9 @@ class Game:
                 return self.quit()
 
         # Set player order
-        order_screen = screens.OrderScreen(screens.CursesWindow(stdscr), player1, player2)
+        order_screen = screens.OrderScreen(
+            screens.CursesWindow(stdscr), player1, player2
+        )
         order_screen.draw()
         try:
             player1, player2 = order_screen.reorder_players()
@@ -77,7 +83,9 @@ class Game:
 
         # Play the game until it's over or a player quits
         board = Board(tokens=[player1.token, player2.token])
-        play_screen = screens.PlayScreen(screens.CursesWindow(stdscr), board, player1, player2)
+        play_screen = screens.PlayScreen(
+            screens.CursesWindow(stdscr), board, player1, player2
+        )
         try:
             play_screen.play()
         except exceptions.PlayerQuitException:

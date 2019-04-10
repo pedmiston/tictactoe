@@ -11,6 +11,7 @@ logger = logging.getLogger("game")
 
 class CursesWindow:
     """A wrapper around a curses window application."""
+
     def __init__(self, stdscr):
         self.stdscr = stdscr
 
