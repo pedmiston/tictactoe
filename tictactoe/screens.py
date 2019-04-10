@@ -1,3 +1,4 @@
+import enum
 import time
 import random
 import itertools
@@ -7,6 +8,12 @@ from tictactoe import board, players, exceptions
 
 
 logger = logging.getLogger("game")
+
+
+class GameType(enum.Enum):
+    human_v_computer = 1
+    human_v_human = 2
+    computer_v_computer = 3
 
 
 class Screen:
@@ -198,7 +205,7 @@ class WelcomeScreen(Screen):
         self.s.refresh()
         time.sleep(self.choice_delay)
 
-        return self.game_types[key]
+        return GameType(int(key))
 
 
 class TokenScreen(Screen):
