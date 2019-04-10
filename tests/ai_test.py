@@ -1,20 +1,19 @@
 import random
 import pytest
-from tictactoe import ai, patterns
-from tictactoe.players import Computer
+from tictactoe import patterns, players
 from tictactoe.board import Board
 
 
 @pytest.fixture
 def hard_computer():
-    hard_computer = Computer(difficulty="Hard", seed=243)
+    hard_computer = players.HardComputer(seed=243)
     hard_computer.token = "X"
     return hard_computer
 
 
 def test_computer_makes_repeatable_guesses():
-    computer1 = Computer(difficulty="Easy", seed=100)
-    computer2 = Computer(difficulty="Easy", seed=100)
+    computer1 = players.EasyComputer(seed=100)
+    computer2 = players.EasyComputer(seed=100)
     board = Board()
     assert computer1.move(board) == computer2.move(board)
 
@@ -72,7 +71,7 @@ def test_hard_computer_blocks_if_cant_win(hard_computer):
 
 @pytest.mark.parametrize("seed", range(10))
 def test_hard_computer_response_strategy_picks_mid_spot_turn_three(seed):
-    hard_computer = Computer(difficulty="Hard", seed=seed)
+    hard_computer = players.HardComputer(seed=seed)
     hard_computer.token = "X"
 
     board = Board()
