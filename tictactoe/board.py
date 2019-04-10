@@ -66,19 +66,3 @@ class Board:
 
     def available_middles(self):
         return [s for s in patterns.middles if self.b[s] not in self.tokens]
-
-    def find_adjacent_corner(self, token):
-        for s1, s2, s3 in patterns.outer_patterns:
-            if self.b[s1] == token and self.b[s2] == str(s2):
-                return s3
-            if self.b[s3] == token and self.b[s2] == str(s2):
-                return s1
-        return -1
-
-    def find_opposite_corner(self, token):
-        for s1, s2, s3 in patterns.diagonal_patterns:
-            if self.b[s1] == token:
-                return s3
-            if self.b[s3] == token:
-                return s1
-        return -1

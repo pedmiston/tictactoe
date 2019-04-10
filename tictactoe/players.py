@@ -51,6 +51,22 @@ class Computer(Player):
         opponent_token = (set(board.tokens) - set(self.token)).pop()
         return self.find_winning_move(board, token=opponent_token)
 
+    def find_adjacent_corner(self, board):
+        for s1, s2, s3 in patterns.outer_patterns:
+            if board[s1] == self.token and board[s2] == str(s2):
+                return s3
+            if board[s3] == self.token and board[s2] == str(s2):
+                return s1
+        return -1
+
+    def find_opposite_corner(self, board):
+        for s1, s2, s3 in patterns.diagonal_patterns:
+            if board[s1] == self.token:
+                return s3
+            if board[s3] == self.token:
+                return s1
+        return -1
+
 
 class EasyComputer(Computer):
     difficulty = "Easy"
@@ -112,10 +128,10 @@ class HardComputer(Computer):
         elif turn == 2:
             if board[4] != "4":
                 # other player picked center, go opposite corner
-                return board.find_opposite_corner(self.token)
+                return self.find_opposite_corner(board)
             else:
                 # pick adjacent corner
-                return board.find_adjacent_corner(self.token)
+                return self.find_adjacent_corner(board)
         elif turn == 4:
             # was blocked and player did not take middle
             return 4

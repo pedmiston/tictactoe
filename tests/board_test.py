@@ -55,20 +55,3 @@ def test_board_detects_tie(xo_board):
     for s in [1, 4, 5, 6]:
         xo_board[s] = "O"
     assert xo_board.is_tie()
-
-
-def test_board_finds_adjacent_corner(xo_board):
-    xo_board[0] = "X"
-    assert xo_board.find_adjacent_corner("X") == 2
-
-
-def test_boad_fails_to_find_adjacent_corner_if_blocked(xo_board):
-    xo_board[0] = "X"
-    xo_board[1] = "O"
-    xo_board[3] = "O"
-    assert xo_board.find_adjacent_corner("X") == -1
-
-
-def test_board_finds_opposite_corner(xo_board):
-    xo_board[0] = "X"
-    assert xo_board.find_opposite_corner("X") == 8
