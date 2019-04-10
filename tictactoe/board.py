@@ -45,14 +45,14 @@ class Board:
             self.moves.append(Move(key, token))
 
     def find_winning_pattern(self):
-        for s1, s2, s3 in patterns.winning_patterns:
+        for s1, s2, s3 in patterns.get_winning_patterns():
             if self.b[s1] == self.b[s2] == self.b[s3]:
                 return s1, s2, s3
         return -1, -1, -1
 
     def is_over(self):
         return any(
-            self[s1] == self[s2] == self[s3] for s1, s2, s3 in patterns.winning_patterns
+            self[s1] == self[s2] == self[s3] for s1, s2, s3 in patterns.get_winning_patterns()
         )
 
     def is_tie(self):

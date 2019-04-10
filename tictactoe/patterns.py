@@ -1,14 +1,18 @@
 """Patterns of winning spaces."""
-winning_patterns = [
-    (0, 1, 2),
-    (3, 4, 5),
-    (6, 7, 8),
-    (0, 3, 6),
-    (1, 4, 7),
-    (2, 5, 8),
-    (0, 4, 8),
-    (2, 4, 6),
-]
+
+def get_winning_patterns():
+    winning_patterns = set([
+        (0, 1, 2),
+        (3, 4, 5),
+        (6, 7, 8),
+        (0, 3, 6),
+        (1, 4, 7),
+        (2, 5, 8),
+        (0, 4, 8),
+        (2, 4, 6),
+    ])
+    return winning_patterns
+
 
 corners = [0, 2, 6, 8]
 middles = [1, 3, 5, 7]
@@ -40,6 +44,7 @@ def make_diagonal_patterns(winning_patterns, corners):
     return diagonal_patterns
 
 
+winning_patterns = get_winning_patterns()
 partial_patterns = make_partial_patterns(winning_patterns)
 outer_patterns = make_outer_patterns(winning_patterns)
 diagonal_patterns = make_diagonal_patterns(winning_patterns, corners)
