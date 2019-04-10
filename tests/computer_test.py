@@ -1,7 +1,8 @@
 import random
 import pytest
-from tictactoe import patterns, players
+from tictactoe import players
 from tictactoe.board import Board
+from tictactoe import board as patterns
 
 
 def test_computer_finds_winning_move(xo_board, x_computer):

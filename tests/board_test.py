@@ -1,6 +1,7 @@
 import pytest
-from tictactoe import exceptions, patterns
+from tictactoe import exceptions
 from tictactoe.board import Board, Move
+from tictactoe import board as patterns
 
 
 def test_board_handles_bad_user_input(xo_board):

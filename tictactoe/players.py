@@ -1,6 +1,7 @@
 import string
 import random
-from tictactoe import exceptions, patterns
+from tictactoe import exceptions
+from tictactoe import board as patterns  # !!!
 
 
 class Player:
