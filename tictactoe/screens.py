@@ -360,7 +360,16 @@ class DifficultyScreen(Screen):
         self.window.refresh()
         time.sleep(self.choice_delay)
 
-        player.difficulty = self.difficulties[key]
+        difficulty = self.difficulties[key]
+        if difficulty == "Easy":
+            player = players.EasyComputer(player.label)
+        elif difficulty == "Medium":
+            player = players.MediumComputer(player.label)
+        elif difficulty == "Hard":
+            player = players.HardComputer(player.label)
+        else:
+            raise TicTacToeError()
+
         logger.info(f"Set difficulty of {player} to {player.difficulty}")
 
 
