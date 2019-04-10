@@ -1,7 +1,6 @@
 import pytest
 from tictactoe import exceptions
 from tictactoe.board import Board, Move
-from tictactoe import board as patterns
 
 
 def test_board_handles_bad_user_input(xo_board):
@@ -41,8 +40,8 @@ def test_board_finds_winning_pattern(xo_board):
     assert xo_board.find_winning_pattern() == (0, 1, 2)
 
 
-def test_board_detects_all_winning_patterns():
-    for s1, s2, s3 in patterns.winning_patterns:
+def test_board_detects_all_winning_patterns(xo_board):
+    for s1, s2, s3 in xo_board.get_winning_patterns():
         xo_board = Board(tokens=["X", "O"])
         xo_board[s1] = "X"
         xo_board[s2] = "X"
@@ -56,3 +55,22 @@ def test_board_detects_tie(xo_board):
     for s in [1, 4, 5, 6]:
         xo_board[s] = "O"
     assert xo_board.is_tie()
+
+
+def test_winning_patterns_for_3x3_board(xo_board):
+    expected = set(
+        [
+            (0, 1, 2),
+            (3, 4, 5),
+            (6, 7, 8),
+            (0, 3, 6),
+            (1, 4, 7),
+            (2, 5, 8),
+            (0, 4, 8),
+            (2, 4, 6),
+        ]
+    )
+
+    actual = xo_board.get_winning_patterns()
+
+    assert actual == expected
