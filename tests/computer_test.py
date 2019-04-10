@@ -4,21 +4,21 @@ from tictactoe import patterns, players
 from tictactoe.board import Board
 
 
-def test_board_finds_winning_move(xo_board, x_computer):
+def test_computer_finds_winning_move(xo_board, x_computer):
     xo_board[0] = "X"
     xo_board[1] = "X"
 
     assert x_computer.find_winning_move(xo_board) == 2
 
 
-def test_board_fails_to_find_incomplete_pattern(xo_board, x_computer):
+def test_computer_fails_to_find_incomplete_pattern(xo_board, x_computer):
     xo_board[0] = "X"
     xo_board[5] = "X"
 
     assert x_computer.find_winning_move(xo_board) == -1
 
 
-def test_board_fails_to_find_occupied_winning_move(xo_board, x_computer):
+def test_computer_fails_to_find_occupied_winning_move(xo_board, x_computer):
     xo_board[0] = "X"
     xo_board[1] = "X"
     xo_board[2] = "O"
@@ -26,26 +26,26 @@ def test_board_fails_to_find_occupied_winning_move(xo_board, x_computer):
     assert x_computer.find_winning_move(xo_board) == -1
 
 
-def test_board_finds_blocking_move(xo_board, x_computer):
+def test_computer_finds_blocking_move(xo_board, x_computer):
     xo_board[0] = "O"
     xo_board[1] = "O"
 
     assert x_computer.find_blocking_move(xo_board) == 2
 
 
-def test_board_finds_adjacent_corner(xo_board, x_computer):
+def test_computer_finds_adjacent_corner(xo_board, x_computer):
     xo_board[0] = "X"
     assert x_computer.find_adjacent_corner(xo_board) == 2
 
 
-def test_boad_fails_to_find_adjacent_corner_if_blocked(xo_board, x_computer):
+def test_computer_fails_to_find_adjacent_corner_if_blocked(xo_board, x_computer):
     xo_board[0] = "X"
     xo_board[1] = "O"
     xo_board[3] = "O"
     assert x_computer.find_adjacent_corner(xo_board) == -1
 
 
-def test_board_finds_opposite_corner(xo_board, x_computer):
+def test_computer_finds_opposite_corner(xo_board, x_computer):
     xo_board[0] = "X"
     assert x_computer.find_opposite_corner(xo_board) == 8
 
