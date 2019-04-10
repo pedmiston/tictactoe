@@ -122,8 +122,8 @@ def test_switch_order(stdscr, logging_game):
 def test_hard_ai_always_ties(stdscr, logging_game, seed1, seed2):
     app.create_players_from_game_type = Mock()
     app.create_players_from_game_type.return_value = (
-        players.Computer("Computer 1", seed=seed1),
-        players.Computer("Computer 2", seed=seed2),
+        players.HardComputer("Computer 1", seed=seed1),
+        players.HardComputer("Computer 2", seed=seed2),
     )
 
     stdscr.getkey.side_effect = [
