@@ -6,25 +6,6 @@ from tictactoe import app, screens, players, exceptions
 from tictactoe.screens import Screen
 
 
-@pytest.fixture
-def stdscr():
-    """A mock of a curses window."""
-    stdscr = Mock()
-    stdscr.getyx.return_value = (0, 0)
-
-    # mock the curses module
-    _curses = screens.curses
-    screens.curses = Mock()
-
-    # mock the way curses colors implement the bitwise-OR operator "|="
-    screens.curses.color_pair.return_value = _curses.A_NORMAL
-    screens.curses.A_STANDOUT = _curses.A_NORMAL
-
-    yield stdscr
-
-    # teardown
-    screens.curses = _curses
-
 
 @pytest.fixture
 def logging_game(tmpdir):
