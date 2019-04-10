@@ -1,3 +1,5 @@
 game.log
 .pytest_cache/
 __pycache__/
+.coverage
+htmlcov/
