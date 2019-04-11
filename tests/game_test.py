@@ -6,7 +6,6 @@ from tictactoe import app, screens, players, exceptions
 from tictactoe.screens import Screen
 
 
-
 @pytest.fixture
 def logging_game(tmpdir):
     """A game that logs to a pytest tmpfile."""

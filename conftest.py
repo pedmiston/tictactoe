@@ -16,7 +16,6 @@ def x_computer():
     return computer
 
 
-
 @pytest.fixture
 def stdscr():
     """A mock of a curses window."""

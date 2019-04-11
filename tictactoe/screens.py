@@ -11,19 +11,22 @@ logger = logging.getLogger("game")
 
 
 class GameType(enum.Enum):
-    human_v_computer = 1
-    human_v_human = 2
-    computer_v_computer = 3
+    HUMAN_V_COMPUTER = 1
+    HUMAN_V_HUMAN = 2
+    COMPUTER_V_COMPUTER = 3
 
 
 class CursesWindow:
     """A wrapper around a curses window application."""
+
+    CHOICE_DELAY = 0.5
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
 
     def addstr(self, *args, **kwargs):
         self.stdscr.addstr(*args, **kwargs)
+        self.stdscr.clrtoeol()
 
     def getyx(self):
         return self.stdscr.getyx()
@@ -50,85 +53,6 @@ class CursesWindow:
     def subwin(self, nlines, ncols, start_y, start_x):
         return self.stdscr.subwin(nlines, ncols, start_y, start_x)
 
-
-class Screen:
-    """Parent class for all TicTacToe screens."""
-
-    prompt_y, error_y = 1, 2  # subclasses should overwrite these
-    choice_delay = 0.5
-
-    def __init__(self, window):
-        self.window = window
-
-    def draw_title(self, title):
-        self.window.addstr(0, 0, title)
-
-    def draw_description(self, description):
-        self.window.addstr(1, 0, description)
-
-    def get_key(
-        self,
-        prompt=None,
-        keys=None,
-        yx=None,
-        default=None,
-        highlight=False,
-        show_help_text=False,
-        highlight_color_ix=None,
-    ):
-        """Ask for a key press from the user.
-
-        Args:
-            prompt: The text to display describing the accepted key presses.
-            keys: A list of keys to accept. If keys is None, accept any key.
-            yx: A tuple of (y, x) screen coordinates of where to echo the key press.
-                If not provided, the current cursor position is used.
-            default: A key to use as default. If a default key is provided and
-                ENTER is pressed, the default key will be returned.
-            highlight: Whether to highlight the cell at the yx position.
-            show_help_text: Whether to show help text about the Enter key.
-            highlight_color_ix: Whether to highlight the key in a curses color pair. Optional.
-
-        Returns:
-            key: A string of the key pressed by the user.
-        """
-        if prompt:
-            self.draw_prompt(prompt)
-        yx = yx or self.window.getyx()
-        if default is not None:
-            self.window.addstr(yx[0], yx[1], default)
-
-            if show_help_text:
-                self.window.addstr(
-                    self.prompt_y + 1,
-                    0,
-                    "Press ENTER to accept the highlighted choice.",
-                    curses.color_pair(3),
-                )
-
-        if highlight:
-            if highlight_color_ix:
-                self.window.chgat(
-                    yx[0],
-                    yx[1],
-                    1,
-                    curses.color_pair(highlight_color_ix) | curses.A_STANDOUT,
-                )
-            else:
-                self.window.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
-        self.window.refresh()
-        while True:
-            key = self.window.getkey()
-            # The enter key is "\n" when using getkey() or the constant curses.KEY_ENTER when using getch()
-            if key == "\n" and default is not None:
-                key = default
-                break
-            elif keys is None or key in keys:
-                break
-
-        self.window.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
-        return key
-
     def draw_choices(
         self,
         choices,
@@ -144,101 +68,142 @@ class Screen:
             highlight_key: keyboard key of choice to highlight as the default key. Optional.
             highlight_line: keyboard key of line to highlight, e.g., after it has been selected. Optional.
             start_y: row to start drawing response choices. If not provided,
-                one row below the cursor position is used.
-            choice_colors: dict of choice keys to curses color pair ixs. Optional.
+                one row below the current cursor position is used.
+            choice_colors: dict of choice keys to curses color pair indices. Optional.
         """
         if start_y is None:
-            start_y = self.window.getyx()[0] + 1
+            start_y = self.getyx()[0] + 1
 
         for i, (key, label) in enumerate(choices.items()):
             row = start_y + i
+
+            # TODO: Refactor this!
             if choice_colors and key in choice_colors:
-                self.window.addstr(row, 0, f"({key}) ")
-                self.window.addstr(f"{label}", curses.color_pair(choice_colors[key]))
+                self.addstr(row, 0, f"({key}) ")
+                self.addstr(f"{label}", curses.color_pair(choice_colors[key]))
             else:
-                self.window.addstr(row, 0, f"({key}) {label}")
+                self.addstr(row, 0, f"({key}) {label}")
+
             if key == highlight_key:
                 if choice_colors and key in choice_colors:
-                    self.window.chgat(
+                    self.chgat(
                         row,
                         0,
                         3,
                         curses.color_pair(choice_colors[key]) | curses.A_STANDOUT,
                     )
                 else:
-                    self.window.chgat(row, 0, 3, curses.A_STANDOUT)
+                    self.chgat(row, 0, 3, curses.A_STANDOUT)
+
             if key == highlight_line:
-                end_x = 4 + len(choices[key])
+                len_of_choice_prefix = 4
+                end_x = len_of_choice_prefix + len(choices[key])
                 if choice_colors and key in choice_colors:
-                    self.window.chgat(
+                    self.chgat(
                         row,
                         0,
                         end_x,
                         curses.color_pair(choice_colors[key]) | curses.A_STANDOUT,
                     )
                 else:
-                    self.window.chgat(row, 0, end_x, curses.A_STANDOUT)
+                    self.chgat(row, 0, end_x, curses.A_STANDOUT)
+        
+        self.refresh()
 
-    def draw_prompt(self, msg):
-        self.window.move(self.prompt_y, 0)
-        self.window.clearln()
-        self.window.addstr(msg)
+    def get_response(
+        self, keys=None, yx=None, default=None, highlight=False, highlight_color_ix=None
+    ):
+        """Ask for a key press from the user.
 
-    def draw_error_message(self, msg=None):
-        self.window.move(self.error_y, 0)
-        self.window.clearln()
-        if msg is not None:
-            c = (
-                curses.color_pair(1) | curses.A_STANDOUT
-            )  # combine color with standout effects with bitwise "or"
-            self.window.addstr(f"!", c)
-            self.window.addstr(f" {msg}", curses.color_pair(1))
+        Args:
+            keys: A list of keys to accept. If keys is None, accept any key.
+            yx: A tuple of (y, x) screen coordinates of where to echo the key press.
+                If not provided, the current cursor position is used.
+            default: A key to use as default. If a default key is provided and
+                ENTER is pressed, the default key will be returned.
+            highlight: Whether to highlight the cell at the yx position.
+            highlight_color_ix: Whether to highlight the key in a curses color pair. Optional.
 
+        Returns:
+            key: A string of the key pressed by the user.
+        """
+        yx = yx or self.getyx()
+        if default is not None:
+            self.addstr(yx[0], yx[1], default)
 
-class WelcomeScreen(Screen):
-    """The WelcomeScreen welcomes the player and asks for game type."""
+        if highlight:
+            # TODO: Refactor
+            if highlight_color_ix:
+                self.chgat(
+                    yx[0],
+                    yx[1],
+                    1,
+                    curses.color_pair(highlight_color_ix) | curses.A_STANDOUT,
+                )
+            else:
+                self.chgat(yx[0], yx[1], 1, curses.A_STANDOUT)
 
-    game_types = {
-        "1": "Human v Computer",
-        "2": "Human v Human",
-        "3": "Computer v Computer",
-    }
+        while True:
+            # The enter key is "\n" when using getkey()
+            # or the constant curses.KEY_ENTER when using getch()
+            key = self.getkey()
+            if key == "\n" and default is not None:
+                key = default
+                break
+            elif keys is None or key in keys:
+                break
 
-    def draw(self):
-        self.window.clear()
-        self.draw_title("Let's play Tic Tac Toe!")
-        self.draw_description("Which type of game would you like to play?")
-        self.draw_choices(self.game_types, highlight_key="1", start_y=3)
-        self.window.refresh()
-
-        # set prompt 2 lines below choices
-        self.prompt_y = self.window.getyx()[0] + 2
+        self.addstr(yx[0], yx[1], key, curses.A_STANDOUT)
+        return key
 
     def get_game_type(self):
         """Returns the game type from a key press."""
-        choices = ["1", "2", "3", "q"]
-        prompt = "Enter [1-3] or Q to quit: "
-        key = self.get_key(
-            prompt=prompt,
-            keys=choices,
-            default=choices[0],
-            highlight=True,
-            show_help_text=True,
+        game_type_labels = {
+            str(GameType.HUMAN_V_COMPUTER.value): "Human v Computer",
+            str(GameType.HUMAN_V_HUMAN.value): "Human v Human",
+            str(GameType.COMPUTER_V_COMPUTER.value): "Computer v Computer",
+        }
+
+        self.clear()
+        self.addstr(0, 0, "Let's play Tic Tac Toe!")
+        self.addstr(1, 0, "Which type of game would you like to play?")
+        self.draw_choices(game_type_labels, highlight_key="1", start_y=3)
+
+        prompt_y = self.getyx()[0] + 2
+        self.addstr(prompt_y, 0, "Enter [1-3] or Q to quit: ")
+        response_yx = self.getyx()
+
+        self.addstr(
+            prompt_y + 1,
+            0,
+            "Press ENTER to accept the highlighted choice.",
+            curses.color_pair(3),
+        )
+
+        choices = [str(i) for i in game_type_labels] + ["q"]
+        key = self.get_response(
+            keys=choices, yx=response_yx, default=choices[0], highlight=True
         )
         if key == "q":
             raise exceptions.PlayerQuitException()
-        elif key not in self.game_types:
-            raise exceptions.TicTacToeError(
-                f"unknown key '{key}' not in game types: {self.game_types}"
-            )
 
-        # highlight selected game type
-        self.draw_choices(self.game_types, highlight_line=key, start_y=3)
-        self.window.refresh()
-        time.sleep(self.choice_delay)
+        self.draw_choices(game_type_labels, highlight_line=key, start_y=3)
+        time.sleep(self.CHOICE_DELAY)
 
         return GameType(int(key))
 
+
+class Screen:
+    """Parent class for all TicTacToe screens."""
+
+
+    def draw_error_message(self, msg, error_y):
+        self.move(error_y, 0)
+        c = (
+            curses.color_pair(1) | curses.A_STANDOUT
+        )  # combine color with standout effects with bitwise "or"
+        self.addstr(f"!", c)
+        self.addstr(f" {msg}", curses.color_pair(1))
 
 class TokenScreen(Screen):
     """The TokenScreen allows players to pick their tokens."""
