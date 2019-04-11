@@ -33,9 +33,9 @@ class Game:
         """
         logger.info("Starting a new game")
         screens.configure_curses()
+        window = screens.CursesWindow(stdscr)
 
-        # Welcome the player and ask for game type
-        welcome_screen = screens.WelcomeScreen(screens.CursesWindow(stdscr))
+        welcome_screen = screens.WelcomeScreen(window)
         welcome_screen.draw()
         try:
             game_type = welcome_screen.get_game_type()
@@ -54,7 +54,7 @@ class Game:
         player2.token = "O"
 
         token_screen = screens.TokenScreen(
-            screens.CursesWindow(stdscr), player1, player2
+            window, player1, player2
         )
         token_screen.draw()
         token_screen.update_player_tokens()
@@ -62,7 +62,7 @@ class Game:
         if game_has_computer_players(game_type):
             # Set computer player difficulties
             difficulty_screen = screens.DifficultyScreen(
-                screens.CursesWindow(stdscr), player1, player2
+                window, player1, player2
             )
             difficulty_screen.draw()
             try:
@@ -72,7 +72,7 @@ class Game:
 
         # Set player order
         order_screen = screens.OrderScreen(
-            screens.CursesWindow(stdscr), player1, player2
+            window, player1, player2
         )
         order_screen.draw()
         try:
@@ -84,7 +84,7 @@ class Game:
         # Play the game until it's over or a player quits
         board = Board(tokens=[player1.token, player2.token])
         play_screen = screens.PlayScreen(
-            screens.CursesWindow(stdscr), board, player1, player2
+            window, board, player1, player2
         )
         try:
             play_screen.play()
@@ -93,7 +93,7 @@ class Game:
 
         # Ask the player if they want to play again
         end_screen = screens.EndScreen(
-            screens.CursesWindow(stdscr), board, board_window=play_screen.board_window
+            window, board, board_window=play_screen.board_window
         )
         play_again = end_screen.ask_play_again()
         if play_again:
